@@ -11,6 +11,7 @@ import qualified XMonad.StackSet as W
 
 import XMonad.Actions.Promote
 import XMonad.Actions.CycleWS
+import XMonad.Actions.CycleRecentWS
 import XMonad.Actions.CopyWindow
 import XMonad.Actions.WindowGo
 
@@ -163,6 +164,9 @@ insKeys =
     , ("M-S-l",             shiftToNext)
     , ("M-C-S-h",           shiftToPrev >> prevWS)
     , ("M-C-S-l",           shiftToNext >> nextWS)
+
+    -- cycle throug recent workspaces with alt-tab
+    , ("M-<Tab>",           cycleRecentWS [xK_Alt_L] xK_Tab xK_grave)
 
     -- resize tiled windows
     , ("M-r k",               sendMessage MirrorExpand)
