@@ -139,7 +139,7 @@ terminalCommands = [ maybeTerm c | c <- programs ]
         programs = [ "newsbeuter", "slrn", "mutt", "centerim"]
 
 
-scratchpadWorkspaceTag = "SP"
+scratchpadWorkspaceTag = "NSP"
 
 delKeys = []
 insKeys =
