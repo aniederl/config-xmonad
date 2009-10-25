@@ -146,7 +146,8 @@ scratchpadWorkspaceTag = "NSP"
 delKeys = []
 insKeys =
     [ ("M-<Return>",        promote)
-    , ("M-b",               sendMessage ToggleStruts)
+    , ("M-v",               sendMessage ToggleStruts)
+    , ("M-g",               sendMessage $ ToggleStrut L)
     , ("M-h",               moveTo Prev (WSIs $ do ne <- return (isJust . stack)
                                                    ns <- return ((scratchpadWorkspaceTag /=) . tag)
                                                    return (\w -> ne w && ns w)))
@@ -161,7 +162,7 @@ insKeys =
     , ("M-x",               sendMessage Expand)
 
     -- banish the mouse pointer into bottom right corner
-    , ("M-v",               banish LowerRight)
+    , ("M-b",               banish LowerRight)
 
     -- toggle to last workspace (like C-a C-a in screen)
     , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
