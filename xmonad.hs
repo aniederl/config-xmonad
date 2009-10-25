@@ -145,12 +145,9 @@ delKeys = []
 insKeys =
     [ ("M-<Return>",        promote)
     , ("M-b",               sendMessage ToggleStruts)
---    , ("M-x",               xmonadPromptC terminalCommands myXPConfig)
---    , ("M-h",               moveTo Prev NonEmptyWS)
     , ("M-h",               moveTo Prev (WSIs $ do ne <- return (isJust . stack)
                                                    ns <- return ((scratchpadWorkspaceTag /=) . tag)
                                                    return (\w -> ne w && ns w)))
---    , ("M-l",               moveTo Next NonEmptyWS)
     , ("M-l",               moveTo Next (WSIs $ do ne <- return (isJust . stack)
                                                    ns <- return ((scratchpadWorkspaceTag /=) . tag)
                                                    return (\w -> ne w && ns w)))
@@ -160,19 +157,20 @@ insKeys =
     , ("M-C-S-l",           shiftToNext >> nextWS)
     , ("M-z",               sendMessage Shrink)
     , ("M-x",               sendMessage Expand)
---    , ("M-z",               toggleWS)
---    , ("M-a",               (windows $ greedyView =<< tag . head . hidden))
+
+    -- toggle to last workspace (like C-a C-a in screen)
     , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
     , ("M-;",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
+
     , ("C-M-l",             spawn "xscreensaver-command -lock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
     , ("M-p",               spawn "exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec $exe\"")
     , ("M-S-p",             spawn ("exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec " ++ myTerminal ++ " -e $exe\""))
---    , ("M-s",               scratchpadSpawnAction myConfig)
---    , ("M-s",               scratchpadAction $ spawn $ terminal myConfig ++ " -name scratchpad" ++ " -e $SHELL -c 'screen -S scratchpad'")
 
---    need to add '-name' as first argument or else urxvt won't use it
+    -- scratchpad terminal with a screen session
+    -- need to add '-name' as first argument or else urxvt won't use it
     , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'screen -c ~/.xmonad/screenrc-scratchpad -D -R scratchpad'"))
+
     , ("M-e",               spawn myTerminal)
     , ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
@@ -180,10 +178,6 @@ insKeys =
     , ("M-C-<End>",         spawn "mpc stop")
     , ("M-C-<Page_Up>",     spawn "mpc prev")
     , ("M-C-<Page_Down>",   spawn "mpc next")
---    , ("M-C-1",             spawn "${HOME}/bin/u1")
---    , ("M-C-2",             spawn "${HOME}/bin/u2")
---    , ("M-C-3",             spawn "${HOME}/bin/u3")
---    , ("M-C-4",             spawn "${HOME}/bin/u4")
     ]
     ++
     -- This enables view switching, window shifting, and window copying
@@ -191,14 +185,6 @@ insKeys =
                   | (i, k) <- zip myWorkspaces ['1'..'9']
                   , (f, m) <- [(W.view, ""), (W.shift, "-S"), (copy, "-C-S")]]
 
---    ++
---    zip (zip (repeat (modm)) [xK_1..xK_9]) (map (withNthWorkspace W.greedyView) [0..])
---    ++
---    zip (zip (repeat (modm .|. shiftMask)) [xK_1..xK_9]) (map (withNthWorkspace W.shift) [0..])
-
---    , ((modm,                 xK_x), dirExecPromptNamed defaultXPConfig (\cmd -> raiseMaybe (runInTerm "" cmd) (title =? cmd)) "/home/andi/.xmonad/.terminal_apps" "Terminal: ")
-
--- stringProperty "WM_COMMAND" =? p
 
 multimediaKeys =
         [ ((0, 0x1008ff11), unsafeSpawn "amixer -q set Master 5%-")
