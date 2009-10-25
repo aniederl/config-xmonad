@@ -1,0 +1,5 @@
+source /etc/screen/screenrc
+screen -t mixer 0 alsamixer
+screen -t zsh 1
+
+# vim: ft=screen
