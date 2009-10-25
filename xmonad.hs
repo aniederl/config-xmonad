@@ -45,6 +45,8 @@ import XMonad.Layout.WindowArranger
 import XMonad.Layout.Decoration
 import XMonad.Layout.ShowWName
 import XMonad.Layout.Maximize
+import XMonad.Layout.ResizableTile
+import XMonad.Layout.Named
 
 import XMonad.Prompt
 import XMonad.Prompt.XMonad
@@ -125,7 +127,7 @@ myLayout =
                      ||| Circle
                      ||| magnify Grid
     where
-      tiled   = Tall nmaster delta ratio
+      tiled   = named "Tall" $ ResizableTall nmaster delta ratio []
       nmaster = 1
       ratio   = 1/2
       delta   = 3/100
@@ -158,8 +160,12 @@ insKeys =
     , ("M-S-l",             shiftToNext)
     , ("M-C-S-h",           shiftToPrev >> prevWS)
     , ("M-C-S-l",           shiftToNext >> nextWS)
-    , ("M-z",               sendMessage Shrink)
-    , ("M-x",               sendMessage Expand)
+
+    -- resize tiled windows
+    , ("M-r k",               sendMessage MirrorExpand)
+    , ("M-r j",               sendMessage MirrorShrink)
+    , ("M-r h",               sendMessage Shrink)
+    , ("M-r l",               sendMessage Expand)
 
     -- banish the mouse pointer into bottom right corner
     , ("M-b",               banish LowerRight)
