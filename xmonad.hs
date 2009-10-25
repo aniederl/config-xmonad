@@ -20,9 +20,10 @@ import XMonad.Actions.UpdatePointer
 import XMonad.Actions.Warp
 
 import XMonad.Hooks.SetWMName
-import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageHelpers
 
 import XMonad.Hooks.EwmhDesktops
 
@@ -211,9 +212,9 @@ myGestures = M.fromList
 
 myManageHook = composeAll $
                 -- auto float
-               [ className =? c --> doFloat  | c <- myClassFloats ]
+               [ className =? c --> doCenterFloat  | c <- myClassFloats ]
                ++
-               [ title     =? t --> doFloat  | t <- myTitleFloats ]
+               [ title     =? t --> doCenterFloat  | t <- myTitleFloats ]
                ++
                 -- ignore
                [ resource  =? r --> doIgnore | r <- myIgnores ]
