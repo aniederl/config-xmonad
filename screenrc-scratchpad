@@ -1,5 +1,6 @@
 source /etc/screen/screenrc
 screen -t mixer 0 alsamixer
-screen -t zsh 1
+screen -t messages 1 tail -f /var/log/messages
+screen -t zsh 2
 
 # vim: ft=screen
