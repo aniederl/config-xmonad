@@ -6,6 +6,7 @@
 import XMonad hiding ( (|||) )
 
 import XMonad.Actions.Promote
+
 import XMonad.Actions.UpdatePointer
 import XMonad.Actions.Warp
 import XMonad.Actions.MouseResize
@@ -157,6 +158,9 @@ insKeys =
     , ("M-C-S-l",           shiftToNext >> nextWS)
     , ("M-z",               sendMessage Shrink)
     , ("M-x",               sendMessage Expand)
+
+    -- banish the mouse pointer into bottom right corner
+    , ("M-v",               banish LowerRight)
 
     -- toggle to last workspace (like C-a C-a in screen)
     , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
