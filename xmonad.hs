@@ -5,15 +5,19 @@
 
 import XMonad hiding ( (|||) )
 
-import XMonad.Actions.Promote
+import qualified Data.Map as M
+import qualified XMonad.StackSet as W
 
-import XMonad.Actions.UpdatePointer
-import XMonad.Actions.Warp
-import XMonad.Actions.MouseResize
-import XMonad.Actions.WindowGo
-import XMonad.Actions.DynamicWorkspaces
+
+import XMonad.Actions.Promote
 import XMonad.Actions.CycleWS
 import XMonad.Actions.CopyWindow
+import XMonad.Actions.WindowGo
+
+-- mouse
+import XMonad.Actions.MouseResize
+import XMonad.Actions.UpdatePointer
+import XMonad.Actions.Warp
 
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.ManageDocks
@@ -21,7 +25,6 @@ import XMonad.Hooks.UrgencyHook
 import XMonad.Hooks.DynamicLog
 
 import XMonad.Hooks.EwmhDesktops
-import Data.Monoid
 
 import XMonad.Layout.Circle
 import XMonad.Layout.Square
@@ -51,12 +54,10 @@ import XMonad.Util.Run
 import XMonad.Util.Themes
 import XMonad.Util.Scratchpad
 
-import qualified Data.Map as M
-import qualified XMonad.StackSet as W
-
 import Data.Ratio
 import Data.List
 import Data.Maybe
+import Data.Monoid ( mappend )
 
 import Text.Regex.Posix
 
