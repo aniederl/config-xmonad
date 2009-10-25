@@ -31,7 +31,7 @@ import XMonad.Layout.Circle
 import XMonad.Layout.Square
 import XMonad.Layout.Simplest
 import XMonad.Layout.TwoPane
-import XMonad.Layout.Magnifier
+import XMonad.Layout.Magnifier hiding ( Toggle )
 import XMonad.Layout.Grid
 import XMonad.Layout.Combo
 import XMonad.Layout.LayoutCombinators
@@ -47,6 +47,8 @@ import XMonad.Layout.ShowWName
 import XMonad.Layout.Maximize
 import XMonad.Layout.ResizableTile
 import XMonad.Layout.Named
+import XMonad.Layout.MultiToggle
+import XMonad.Layout.MultiToggle.Instances
 
 import XMonad.Prompt
 import XMonad.Prompt.XMonad
@@ -120,6 +122,7 @@ myLayout =
          layoutHints
          $ avoidStruts
          $ smartBorders
+         $ mkToggle1 NBFULL
          $ onWorkspace "term" (tiled ||| Mirror tiled ||| Circle ||| magnify Grid ||| Full)
          $ Full
                      ||| tiled
@@ -166,6 +169,8 @@ insKeys =
     , ("M-r j",               sendMessage MirrorShrink)
     , ("M-r h",               sendMessage Shrink)
     , ("M-r l",               sendMessage Expand)
+
+    , ("M-C-<Space>",       sendMessage $ Toggle NBFULL)
 
     -- banish the mouse pointer into bottom right corner
     , ("M-b",               banish LowerRight)
