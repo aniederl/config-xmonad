@@ -14,7 +14,6 @@ import XMonad.Actions.WindowGo
 import XMonad.Actions.DynamicWorkspaces
 import XMonad.Actions.CycleWS
 import XMonad.Actions.CopyWindow
-import XMonad.Actions.MouseGestures
 
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.ManageDocks
@@ -202,10 +201,7 @@ multimediaKeys =
         ]
 
 delButtons = []
-insButtons =
-        [
---            ((0, button3),        mouseGesture myGestures)
-        ]
+insButtons = []
 
 myGestures = M.fromList
         [ ( [],                 focus)
