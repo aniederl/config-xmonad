@@ -3,7 +3,7 @@
 -- #include <X11/XF86keysym.h>
 -- -}
 
-import XMonad hiding (Tall)
+import XMonad hiding ( (|||) )
 
 import XMonad.Actions.Promote
 import XMonad.Actions.UpdatePointer
@@ -24,17 +24,15 @@ import XMonad.Hooks.EwmhDesktops
 import Data.Monoid
 
 import XMonad.Layout.Circle
-import XMonad.Layout.Spiral
 import XMonad.Layout.Square
-import XMonad.Layout.Tabbed
 import XMonad.Layout.Simplest
 import XMonad.Layout.TwoPane
+import XMonad.Layout.Magnifier
 import XMonad.Layout.Grid
 import XMonad.Layout.Combo
-import XMonad.Layout.LayoutCombinators hiding ( (|||) )
+import XMonad.Layout.LayoutCombinators
 
 import XMonad.Layout.LayoutHints
-import XMonad.Layout.HintedTile
 import XMonad.Layout.NoBorders
 import XMonad.Layout.DragPane (dragPane, DragType(..))
 import XMonad.Layout.PerWorkspace (onWorkspace, onWorkspaces)
@@ -66,10 +64,6 @@ import System.Exit
 
 import XMonad.StackSet (view, greedyView, tag, hidden, stack)
 
-myWorkspaces  = [ "term", "mail", "web", "music" ] ++ map show [5 .. 9 :: Int]
---myWorkspaces = map show [1 .. 9 :: Int]
-
--- startupHook = setWMName "LG3D"
 
 myFont    :: String
 myBgColor :: String
@@ -115,32 +109,26 @@ floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration De
 floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
 
 
+myWorkspaces  = [ "term", "mail", "web", "web 2" ] ++ map show [5 .. 9 :: Int]
+
 myLayout =
 --           showWName' myShowWNameConfig
          layoutHints
          $ avoidStruts
          $ smartBorders
-         $ onWorkspace "term" (Full ||| hintedTile Tall ||| hintedTile Wide ||| maximize Grid)
-         $ onWorkspace "mail" (Full ||| hintedTile Tall ||| hintedTile Wide ||| maximize Grid)
-         $ onWorkspace "web"  (Full ||| hintedTile Tall ||| hintedTile Wide ||| maximize Grid)
---         $ onWorkspace "term" (hintedTile Wide)
---         $ onWorkspace "mail" (Full)
---         $ onWorkspace "web" (Full)
---         $ onWorkspace "music" (maximize floatSimple)
---         $ onWorkspace "5" (maximize Circle)
---         $ onWorkspace "7" (myTab *|* (Full **/* myTab))
---         $ onWorkspace "7" (maximize Grid)
-         $ hintedTile Tall
-                     ||| hintedTile Wide
-                     ||| Full
-                     ||| tabbed shrinkText myTheme
-                     ||| spiral (1 % 1)
+         $ onWorkspace "term" (tiled ||| Mirror tiled ||| Circle ||| magnify Grid ||| Full)
+         $ Full
+                     ||| tiled
+                     ||| Mirror tiled
+                     ||| Circle
+                     ||| magnify Grid
     where
-      hintedTile  =  HintedTile nmaster delta ratio TopLeft
-      nmaster     = 1
-      ratio       = 1/2
-      delta       = 3/100
---      myTab       = tabbed shrinkText myTheme
+      tiled   = Tall nmaster delta ratio
+      nmaster = 1
+      ratio   = 1/2
+      delta   = 3/100
+      magnify = magnifiercz (12%10)
+
 
 maybeTerm :: String -> (String, X ())
 maybeTerm cmd = (cmd, raiseMaybe (runInTerm "" cmd) (title =? cmd))
@@ -278,12 +266,15 @@ myPP h = defaultPP
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
                     "Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
-                    "Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
                     "Hinted Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
+                    "Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
+                    "Hinted Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
                     "Hinted Wide" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
+                    "Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
                     "Hinted Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
+                    "Hinted Circle" -> "circle"
                     "Grid" -> "grid"
+                    "Hinted Magnifier Grid" -> "grid"
                     "Tabbed" -> "tabbed"
                     _        -> pad x
                     )
