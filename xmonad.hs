@@ -14,6 +14,7 @@ import XMonad.Actions.CycleWS
 import XMonad.Actions.CycleRecentWS
 import XMonad.Actions.CopyWindow
 import XMonad.Actions.WindowGo
+import XMonad.Actions.SpawnOn
 
 -- mouse
 import XMonad.Actions.MouseResize
@@ -195,7 +196,6 @@ insKeys =
 
     , ("C-M-l",             spawn "xscreensaver-command -lock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
-    , ("M-p",               shellPrompt myShellXPConfig)
     --, ("M-S-p",             prompt (myTerminal ++ " -e") myShellXPConfig) -- no completion
     , ("M-S-p",             spawn ("exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec " ++ myTerminal ++ " -e $exe\""))
 
@@ -329,5 +329,9 @@ myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "bla
          where x +++ y = mappend x y
 
 main = do din <- spawnPipe statusBarCmd
+          sp <- mkSpawner
           xmonad $ myConfig
-                 { logHook            = ewmhDesktopsLogHook >> (dynamicLogWithPP $ myPP din) >> updatePointer (Relative 1.0 1.0) }
+                 { logHook            = ewmhDesktopsLogHook >> (dynamicLogWithPP $ myPP din) >> updatePointer (Relative 1.0 1.0)
+                 , manageHook         = manageSpawn sp <+> myManageHook
+                 }
+                `additionalKeysP` [ ("M-p", shellPromptHere sp myShellXPConfig) ]
