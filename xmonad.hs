@@ -209,14 +209,13 @@ insKeys =
 
 
 multimediaKeys =
-        [ ((0, 0x1008ff11), unsafeSpawn "amixer -q set Master 5%-")
-        , ((0, 0x1008ff12), unsafeSpawn "amixer -q set Master toggle")
-        , ((0, 0x1008ff13), unsafeSpawn "amixer -q set Master 5%+")
---        , ((0, 0x1008ff14), spawn "dcop amarok player playPause")
-        , ((0, 0x1008ff14), spawn "mpc toggle")
-        , ((0, 0x1008ff15), spawn "mpc stop")
-        , ((0, 0x1008ff16), spawn "mpc prev")
-        , ((0, 0x1008ff17), spawn "mpc next")
+        [ ("XF86AudioLowerVolume", unsafeSpawn "amixer -q set Master 5%-")
+        , ("XF86AudioMute",        unsafeSpawn "amixer -q set Master toggle")
+        , ("XF86AudioRaiseVolume", unsafeSpawn "amixer -q set Master 5%+")
+        , ("XF86AudioPlay",        spawn "mpc toggle")
+        , ("XF86AudioStop",        spawn "mpc stop")
+        , ("XF86AudioPrev",        spawn "mpc prev")
+        , ("XF86AudioNext",        spawn "mpc next")
         ]
 
 delButtons = []
@@ -307,7 +306,7 @@ myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "bla
          }
          `removeKeysP` delKeys
          `additionalKeysP` insKeys
-         `additionalKeys` multimediaKeys
+         `additionalKeysP` multimediaKeys
          `removeMouseBindings` delButtons
          `additionalMouseBindings` insButtons
          where x +++ y = mappend x y
