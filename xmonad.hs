@@ -168,11 +168,9 @@ insKeys =
     -- cycle throug recent workspaces with alt-tab
     , ("M-<Tab>",           cycleRecentWS [xK_Alt_L] xK_Tab xK_grave)
 
-    -- resize tiled windows
-    , ("M-r k",               sendMessage MirrorExpand)
-    , ("M-r j",               sendMessage MirrorShrink)
-    , ("M-r h",               sendMessage Shrink)
-    , ("M-r l",               sendMessage Expand)
+    -- resize master pane
+    , ("M-z",               sendMessage Shrink)
+    , ("M-x",               sendMessage Expand)
 
     , ("M-C-<Space>",       sendMessage $ Toggle NBFULL)
 
