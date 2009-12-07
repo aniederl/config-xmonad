@@ -52,8 +52,9 @@ import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
 
 import XMonad.Prompt
-import XMonad.Prompt.XMonad
-import XMonad.Prompt.DirExec
+import XMonad.Prompt.Shell
+import XMonad.Prompt.AppendFile
+import XMonad.Prompt.Workspace
 
 import XMonad.Util.EZConfig
 import XMonad.Util.Run
@@ -86,23 +87,31 @@ promptFontSize = "14"
 
 myTerminal = "urxvt"
 
+myHome = "/home/andi"
+
 myTheme = defaultTheme
     { fontName = myFont ++ titleFontSize
     }
 
 myXPConfig = defaultXPConfig
-    { font = myFont ++ promptFontSize,
---      font = "xft:DejaVu Sans:size=18",
-      bgColor = myBgColor,
-      fgColor = myFgColor,
-      bgHLight = myFgColor,
-      fgHLight = myBgColor,
-      borderColor = myBgColor,
+    { font              = myFont ++ promptFontSize,
+      bgColor           = myBgColor,
+      fgColor           = myFgColor,
+      bgHLight          = myFgColor,
+      fgHLight          = myBgColor,
+      borderColor       = myBgColor,
       promptBorderWidth = 0,
-      position = Bottom,
---      height = 16,
-      defaultText = ""
+      position          = Top,
+      defaultText       = ""
     }
+
+myShellXPConfig = myXPConfig
+    { -- autocomplete after 1 sec
+      autoComplete      = Just 100000
+    }
+
+myNoteXPConfig = myXPConfig
+    { position = Bottom }
 
 myShowWNameConfig = defaultSWNConfig
     { swn_font    = "xft:DejaVu Sans Mono:size=18" -- "-misc-fixed-*-*-*-*-20-*-*-*-*-*-*-*"
@@ -186,15 +195,23 @@ insKeys =
 
     , ("C-M-l",             spawn "xscreensaver-command -lock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
-    , ("M-p",               spawn "exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec $exe\"")
+    , ("M-p",               shellPrompt myShellXPConfig)
+    --, ("M-S-p",             prompt (myTerminal ++ " -e") myShellXPConfig) -- no completion
     , ("M-S-p",             spawn ("exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec " ++ myTerminal ++ " -e $exe\""))
+
+    -- note taking
+    , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
+
+    -- workspace prompt
+    , ("M-o",               workspacePrompt myShellXPConfig (windows . W.view))
+    , ("M-S-o",             workspacePrompt myShellXPConfig (windows . W.shift))
 
     -- scratchpad terminal with a screen session
     -- need to add '-name' as first argument or else urxvt won't use it
     , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'screen -c ~/.xmonad/screenrc-scratchpad -D -R scratchpad'"))
 
     , ("M-e",               spawn myTerminal)
-    , ("M-n",               refresh)
+    --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
     , ("M-C-<Home>",        spawn "mpc toggle")
     , ("M-C-<End>",         spawn "mpc stop")
