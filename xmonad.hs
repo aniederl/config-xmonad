@@ -311,4 +311,4 @@ myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "bla
 
 main = do din <- spawnPipe statusBarCmd
           xmonad $ myConfig
-                 { logHook            = ewmhDesktopsLogHook >> (dynamicLogWithPP $ myPP din) >> updatePointer (Relative 0.5 0.5) }
+                 { logHook            = ewmhDesktopsLogHook >> (dynamicLogWithPP $ myPP din) >> updatePointer (Relative 1.0 1.0) }
