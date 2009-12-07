@@ -181,6 +181,9 @@ insKeys =
     , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
     , ("M-;",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
 
+    -- close only focused copy (kill if last)
+    , ("M-S-c",             kill1)
+
     , ("C-M-l",             spawn "xscreensaver-command -lock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
     , ("M-p",               spawn "exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec $exe\"")
