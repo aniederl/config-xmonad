@@ -314,6 +314,7 @@ myPP = defaultPP
     { ppCurrent = wrap ("^fg(#FFFFFF)^bg(#647A90)^p(2)^i(" ++ myBitmapsDir ++ "/has_win.xbm)") "^p(2)^fg(grey55)^bg()"
     , ppVisible = wrap ("^bg(grey30)^fg(grey75)^p(2)") "^p(2)^fg(grey55)^bg()"
     , ppSep     = " ^fg(grey60)^r(3x3)^fg() "
+    , ppWsSep   = " | "
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
                     "Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
