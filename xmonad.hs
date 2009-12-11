@@ -14,6 +14,7 @@ import XMonad.Actions.CycleWS
 import XMonad.Actions.CycleRecentWS
 import XMonad.Actions.CopyWindow
 import XMonad.Actions.SpawnOn
+import XMonad.Actions.TopicSpace as TS
 
 -- mouse
 import XMonad.Actions.MouseResize
@@ -22,7 +23,7 @@ import XMonad.Actions.Warp
 
 import XMonad.Hooks.SetWMName
 import XMonad.Hooks.UrgencyHook
-import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.DynamicLog as DL
 import XMonad.Hooks.ManageDocks
 import XMonad.Hooks.ManageHelpers
 
@@ -107,7 +108,32 @@ floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration De
 floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
 
 
-myWorkspaces  = [ "term", "mail", "web", "web 2" ] ++ map show [5 .. 9 :: Int]
+myTopics :: [Topic]
+myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs" ]
+
+myTopicConfig :: TopicConfig
+myTopicConfig = TopicConfig
+    { topicDirs = M.fromList $
+        [ ("xmonad", ".xmonad")
+        , ("sweb", "bs/sweb")
+        , ("bs", "bs")
+        ]
+    , defaultTopicAction = const $ spawnShell >*> 3
+    , defaultTopic = "admin"
+    , maxTopicHistory = 10
+    , topicActions = M.fromList $
+        [ ("xmonad",    spawnShell)
+        , ("music",     spawn "ario")
+        ]
+    }
+
+-- topic helper functions from TopicSpace doc
+spawnShell :: X ()
+spawnShell = currentTopicDir myTopicConfig >>= spawnShellIn
+
+spawnShellIn :: Dir -> X ()
+spawnShellIn dir = spawn $ "cd ''" ++ dir ++ "'' && exec " ++ myTerminal
+
 
 myLayout =
          layoutHints
@@ -132,7 +158,7 @@ delKeys = []
 insKeys =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
-    , ("M-g",               sendMessage $ ToggleStrut L)
+    , ("M-r",               sendMessage $ ToggleStrut L)
     , ("M-h",               moveTo Prev (WSIs $ do ne <- return (isJust . stack)
                                                    ns <- return ((scratchpadWorkspaceTag /=) . tag)
                                                    return (\w -> ne w && ns w)))
@@ -171,9 +197,9 @@ insKeys =
     -- note taking
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
 
-    -- workspace prompt
-    , ("M-o",               workspacePrompt myShellXPConfig (windows . W.view))
-    , ("M-S-o",             workspacePrompt myShellXPConfig (windows . W.shift))
+    -- workspace/topic prompt
+    , ("M-g",               workspacePrompt myShellXPConfig (switchTopic myTopicConfig))
+    , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
     -- scratchpad terminal with a screen session
     -- need to add '-name' as first argument or else urxvt won't use it
@@ -188,10 +214,10 @@ insKeys =
     , ("M-C-<Page_Down>",   spawn "mpc next")
     ]
     ++
-    -- This enables view switching, window shifting, and window copying
-             [("M" ++ m ++ ('-':k:[]) , windows $ f i)
-                  | (i, k) <- zip myWorkspaces ['1'..'9']
-                  , (f, m) <- [(W.view, ""), (W.shift, "-S"), (copy, "-C-S")]]
+    -- switch or shift to Nth last focused workspace (history)
+             [("M" ++ m ++ ('-':k:[]) , f i)
+                  | (i, k) <- zip [1..] ['1'..'9']
+                  , (f, m) <- [(switchNthLastFocused myTopicConfig, ""), (shiftNthLastFocused, "-S")]]
 
 
 multimediaKeys =
@@ -249,7 +275,8 @@ myManageHook = composeAll $
           myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "mail")
 
 myBitmapsDir = "/home/andi/.dzen/bitmaps/dzen"
-myPP h = defaultPP
+myPP :: PP
+myPP = defaultPP
     { ppCurrent = wrap ("^fg(#FFFFFF)^bg(#647A90)^p(2)^i(" ++ myBitmapsDir ++ "/has_win.xbm)") "^p(2)^fg(grey55)^bg()"
     , ppVisible = wrap ("^bg(grey30)^fg(grey75)^p(2)") "^p(2)^fg(grey55)^bg()"
     , ppSep     = " ^fg(grey60)^r(3x3)^fg() "
@@ -272,10 +299,26 @@ myPP h = defaultPP
                     _        -> pad x
                     )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
-    , ppOutput  = hPutStrLn h
     , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
-    --, ppExtras = [ pprWindowSet topicconfig myPP ]
     }
+
+
+mergePPOutputs :: [PP -> X String] -> PP -> X String
+mergePPOutputs x pp = fmap (intercalate (ppSep pp)) . sequence . sequence x $ pp
+
+onlyTitle :: PP -> PP
+onlyTitle pp = defaultPP { ppCurrent = const ""
+                         , ppHidden  = const ""
+                         , ppVisible = const ""
+                         , ppLayout  = ppLayout pp
+                         , ppTitle   = ppTitle pp }
+
+myDynamicLogString :: TopicConfig -> PP -> X String
+myDynamicLogString tg pp = mergePPOutputs [TS.pprWindowSet tg, dynamicLogString . onlyTitle] pp
+
+myDynamicLogWithPP :: TopicConfig -> PP -> X ()
+myDynamicLogWithPP tg pp = myDynamicLogString tg pp >>= io . ppOutput pp
+
 
 statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*' -sa c -e '' -ta l" -- -w 800"
 --statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn 'xft:DejaVu Sans:size=14' -sa c -e '' -ta l" -- -w 800"
@@ -290,7 +333,7 @@ myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "bla
          , handleEventHook    = ewmhDesktopsEventHook
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
-         , workspaces         = myWorkspaces
+         , workspaces         = myTopics
          , layoutHook         = myLayout
          , manageHook         = myManageHook
          }
@@ -301,10 +344,12 @@ myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "bla
          `additionalMouseBindings` insButtons
          where x +++ y = mappend x y
 
-main = do din <- spawnPipe statusBarCmd
-          sp <- mkSpawner
-          xmonad $ myConfig
-                 { logHook            = ewmhDesktopsLogHook >> (dynamicLogWithPP $ myPP din) >> updatePointer (Relative 1.0 1.0)
-                 , manageHook         = manageSpawn sp <+> myManageHook
-                 }
-                `additionalKeysP` [ ("M-p", shellPromptHere sp myShellXPConfig) ]
+main = do
+    checkTopicConfig myTopics myTopicConfig
+    din <- spawnPipe statusBarCmd
+    sp <- mkSpawner
+    xmonad $ myConfig
+        { logHook            = ewmhDesktopsLogHook >> (myDynamicLogWithPP myTopicConfig $ myPP { ppOutput = hPutStrLn din }) >> updatePointer (Relative 1.0 1.0)
+        , manageHook         = manageSpawn sp <+> myManageHook
+        }
+        `additionalKeysP` [ ("M-p", shellPromptHere sp myShellXPConfig) ]
