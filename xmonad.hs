@@ -15,6 +15,7 @@ import XMonad.Actions.CycleRecentWS
 import XMonad.Actions.CopyWindow
 import XMonad.Actions.SpawnOn
 import XMonad.Actions.TopicSpace as TS
+import XMonad.Actions.DynamicWorkspaces
 
 -- mouse
 import XMonad.Actions.MouseResize
@@ -135,6 +136,12 @@ spawnShellIn :: Dir -> X ()
 spawnShellIn dir = spawn $ "cd ''" ++ dir ++ "'' && exec " ++ myTerminal
 
 
+addTopic :: TopicConfig -> String -> X ()
+addTopic tc newtag = addHiddenTopic tc newtag >> switchTopic tc newtag
+
+addHiddenTopic :: TopicConfig -> String -> X ()
+addHiddenTopic tc newtag = addHiddenWorkspace newtag
+
 myLayout =
          layoutHints
          $ avoidStruts
@@ -200,6 +207,12 @@ insKeys =
     -- workspace/topic prompt
     , ("M-g",               workspacePrompt myShellXPConfig (switchTopic myTopicConfig))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
+
+    , ("M-o",               workspacePrompt myXPConfig (addTopic myTopicConfig))
+    , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic myTopicConfig))
+    , ("M-C-o",             renameWorkspace myXPConfig)
+
+    , ("M-S-<Backspace>",   removeWorkspace)
 
     -- scratchpad terminal with a screen session
     -- need to add '-name' as first argument or else urxvt won't use it
