@@ -113,16 +113,17 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 
 
 myTopics :: [Topic]
-myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs" ]
+myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs", "sup" ]
 
 myTopicConfig :: TopicConfig
 myTopicConfig = TopicConfig
     { topicDirs = M.fromList $
         [ ("xmonad", ".xmonad")
-        , ("sweb", "bs/sweb")
-        , ("bs", "bs")
+        , ("sweb",   "bs/sweb")
+        , ("bs",     "bs")
+        , ("sup",    "src/sup")
         ]
-    , defaultTopicAction = const $ spawnShell >*> 3
+    , defaultTopicAction = const $ spawnShell
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
