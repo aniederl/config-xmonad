@@ -3,7 +3,7 @@
 -- #include <X11/XF86keysym.h>
 -- -}
 
-import XMonad hiding ( (|||) )
+import XMonad
 
 import qualified Data.Map as M
 import qualified XMonad.StackSet as W
@@ -13,7 +13,6 @@ import XMonad.Actions.Promote
 import XMonad.Actions.CycleWS
 import XMonad.Actions.CycleRecentWS
 import XMonad.Actions.CopyWindow
-import XMonad.Actions.WindowGo
 import XMonad.Actions.SpawnOn
 
 -- mouse
@@ -29,23 +28,12 @@ import XMonad.Hooks.ManageHelpers
 
 import XMonad.Hooks.EwmhDesktops
 
-import XMonad.Layout.Circle
-import XMonad.Layout.Square
-import XMonad.Layout.Simplest
-import XMonad.Layout.TwoPane
-import XMonad.Layout.Magnifier hiding ( Toggle )
-import XMonad.Layout.Grid
-import XMonad.Layout.Combo
-import XMonad.Layout.LayoutCombinators
-
 import XMonad.Layout.LayoutHints
-import XMonad.Layout.NoBorders
-import XMonad.Layout.DragPane (dragPane, DragType(..))
+import XMonad.Layout.NoBorders (smartBorders)
 import XMonad.Layout.PerWorkspace (onWorkspace, onWorkspaces)
 import XMonad.Layout.SimpleFloat
 import XMonad.Layout.WindowArranger
 import XMonad.Layout.Decoration
-import XMonad.Layout.ShowWName
 import XMonad.Layout.Maximize
 import XMonad.Layout.ResizableTile
 import XMonad.Layout.Named
@@ -59,7 +47,6 @@ import XMonad.Prompt.Workspace
 
 import XMonad.Util.EZConfig
 import XMonad.Util.Run
-import XMonad.Util.Themes
 import XMonad.Util.Scratchpad
 
 import Data.Ratio
@@ -114,12 +101,6 @@ myShellXPConfig = myXPConfig
 myNoteXPConfig = myXPConfig
     { position = Bottom }
 
-myShowWNameConfig = defaultSWNConfig
-    { swn_font    = "xft:DejaVu Sans Mono:size=18" -- "-misc-fixed-*-*-*-*-20-*-*-*-*-*-*-*"
-    , swn_bgcolor = "black"
-    , swn_color   = "blue"
-    , swn_fade    = 0.3
-    }
 
 floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration DefaultShrinker)
                       (ModifiedLayout MouseResize (ModifiedLayout WindowArranger SimpleFloat)) a
@@ -129,32 +110,20 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 myWorkspaces  = [ "term", "mail", "web", "web 2" ] ++ map show [5 .. 9 :: Int]
 
 myLayout =
---           showWName' myShowWNameConfig
          layoutHints
          $ avoidStruts
          $ smartBorders
          $ mkToggle1 NBFULL
-         $ onWorkspace "term" (tiled ||| Mirror tiled ||| Circle ||| magnify Grid ||| Full)
+         $ maximize
+         $ onWorkspace "term" (tiled ||| Mirror tiled ||| Full)
          $ Full
                      ||| tiled
                      ||| Mirror tiled
-                     ||| Circle
-                     ||| magnify Grid
     where
-      tiled   = named "Tall" $ ResizableTall nmaster delta ratio []
+      tiled   = named "Tall" $ (ResizableTall nmaster delta ratio [])
       nmaster = 1
       ratio   = 1/2
       delta   = 3/100
-      magnify = magnifiercz (12%10)
-
-
-maybeTerm :: String -> (String, X ())
-maybeTerm cmd = (cmd, raiseMaybe (runInTerm "" cmd) (title =? cmd))
-
-terminalCommands :: [(String, X ())]
-terminalCommands = [ maybeTerm c | c <- programs ]
-    where
-        programs = [ "newsbeuter", "slrn", "mutt", "centerim"]
 
 
 scratchpadWorkspaceTag = "NSP"
@@ -288,11 +257,14 @@ myPP h = defaultPP
         (\x -> case x of
                     "Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
                     "Hinted Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
+                    "Hinted Maximize Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
                     "Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
                     "Hinted Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
+                    "Hinted Maximize Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
                     "Hinted Wide" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
                     "Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
                     "Hinted Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
+                    "Hinted Maximize Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
                     "Hinted Circle" -> "circle"
                     "Grid" -> "grid"
                     "Hinted Magnifier Grid" -> "grid"
@@ -302,6 +274,7 @@ myPP h = defaultPP
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
     , ppOutput  = hPutStrLn h
     , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
+    --, ppExtras = [ pprWindowSet topicconfig myPP ]
     }
 
 statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*' -sa c -e '' -ta l" -- -w 800"
