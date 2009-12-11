@@ -16,6 +16,7 @@ import XMonad.Actions.CopyWindow
 import XMonad.Actions.SpawnOn
 import XMonad.Actions.TopicSpace as TS
 import XMonad.Actions.DynamicWorkspaces
+import XMonad.Actions.GridSelect
 
 -- mouse
 import XMonad.Actions.MouseResize
@@ -67,13 +68,13 @@ myFont    :: String
 myBgColor :: String
 myFgColor :: String
 
-myFont = "xft:DejaVu Sans Mono:size="
+myFont = "xft:DejaVu Sans Mono"
 
 myBgColor = "black"
 myFgColor = "blue"
 
-titleFontSize = "8"
-promptFontSize = "14"
+titleFontSize = ":size=8"
+promptFontSize = ":size=14"
 
 myTerminal = "urxvt"
 
@@ -103,6 +104,8 @@ myShellXPConfig = myXPConfig
 myNoteXPConfig = myXPConfig
     { position = Bottom }
 
+myGSConfig = defaultGSConfig
+    { gs_font = myFont }
 
 floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration DefaultShrinker)
                       (ModifiedLayout MouseResize (ModifiedLayout WindowArranger SimpleFloat)) a
@@ -141,6 +144,20 @@ addTopic tc newtag = addHiddenTopic tc newtag >> switchTopic tc newtag
 
 addHiddenTopic :: TopicConfig -> String -> X ()
 addHiddenTopic tc newtag = addHiddenWorkspace newtag
+
+-- darcs gridselect
+-- | Select a workspace and view it using the given function
+-- (normally 'W.view' or 'W.greedyView')
+--
+-- Another option is to shift the current window to the selected workspace:
+--
+-- > gridselectWorkspace (\ws -> W.greedyView ws . W.shift ws)
+gridselectWorkspace :: GSConfig WorkspaceId ->
+                          (WorkspaceId -> WindowSet -> WindowSet) -> X ()
+gridselectWorkspace conf viewFunc = withWindowSet $ \ws -> do
+    let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
+    gridselect conf (zip wss wss) >>= flip whenJust (windows . viewFunc)
+
 
 myLayout =
          layoutHints
@@ -207,6 +224,9 @@ insKeys =
     -- workspace/topic prompt
     , ("M-g",               workspacePrompt myShellXPConfig (switchTopic myTopicConfig))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
+
+    , ("M-f",               gridselectWorkspace myGSConfig W.view)
+    , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
 
     , ("M-o",               workspacePrompt myXPConfig (addTopic myTopicConfig))
     , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic myTopicConfig))
