@@ -113,7 +113,7 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 
 
 myTopics :: [Topic]
-myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs", "sup" ]
+myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs", "sup", "conf" ]
 
 myTopicConfig :: TopicConfig
 myTopicConfig = TopicConfig
@@ -122,12 +122,15 @@ myTopicConfig = TopicConfig
         , ("sweb",   "bs/sweb")
         , ("bs",     "bs")
         , ("sup",    "src/sup")
+        , ("conf",   "etc")
         ]
     , defaultTopicAction = const $ spawnShell
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
-        [ ("xmonad",    spawnShell)
+        [ ("conf",      spawnShell >> spawnT "gvim")
+        , ("xmonad",    spawnShell >> spawnT "gvim")
+        , ("sup",       spawnShell >> spawnT "gvim")
         , ("music",     spawn "ario")
         ]
     }
@@ -136,8 +139,14 @@ myTopicConfig = TopicConfig
 spawnShell :: X ()
 spawnShell = currentTopicDir myTopicConfig >>= spawnShellIn
 
+spawnT :: String -> X ()
+spawnT program = currentTopicDir myTopicConfig >>= spawnIn program
+
 spawnShellIn :: Dir -> X ()
-spawnShellIn dir = spawn $ "cd ''" ++ dir ++ "'' && exec " ++ myTerminal
+spawnShellIn dir = spawnIn dir myTerminal
+
+spawnIn :: String -> Dir -> X ()
+spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && exec " ++ program
 
 
 addTopic :: TopicConfig -> String -> X ()
