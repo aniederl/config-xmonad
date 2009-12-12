@@ -169,21 +169,29 @@ gridselectWorkspace conf viewFunc = withWindowSet $ \ws -> do
     gridselect conf (zip wss wss) >>= flip whenJust (windows . viewFunc)
 
 
+tiled   = named "Tall" $ (ResizableTall nmaster delta ratio [])
+    where
+        nmaster = 1
+        ratio   = 1/2
+        delta   = 3/100
+
+layoutTerm = (tiled ||| Mirror tiled ||| Full)
+layoutCode = (Mirror tiled ||| tiled ||| Full)
+
 myLayout =
          layoutHints
          $ avoidStruts
          $ smartBorders
          $ mkToggle1 NBFULL
          $ maximize
-         $ onWorkspace "term" (tiled ||| Mirror tiled ||| Full)
+         $ onWorkspace "admin"  layoutTerm
+         $ onWorkspace "conf"   layoutCode
+         $ onWorkspace "xmonad" layoutCode
+         $ onWorkspace "sweb"   layoutCode
+         $ onWorkspace "bs"     layoutCode
          $ Full
-                     ||| tiled
-                     ||| Mirror tiled
-    where
-      tiled   = named "Tall" $ (ResizableTall nmaster delta ratio [])
-      nmaster = 1
-      ratio   = 1/2
-      delta   = 3/100
+             ||| tiled
+             ||| Mirror tiled
 
 
 scratchpadWorkspaceTag = "NSP"
