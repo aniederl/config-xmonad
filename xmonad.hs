@@ -304,9 +304,9 @@ myManageHook = composeAll $
                             "Session Manager Options", "Firefox Add-on Updates", "Message Filters", "Event Tester", "Pinentry" ]
           myIgnores = []
           myShifts =  zip [ "Opera", "Firefox" ] (repeat "web")
-                   ++ zip [ "Thunderbird-bin" ] (repeat "mail")
+                   ++ zip [ "Thunderbird-bin" ] (repeat "com")
                    ++ zip ["Amarokapp", "amarokapp", "Ario"] (repeat "music")
-          myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "mail")
+          myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "com")
 
 myBitmapsDir = "/home/andi/.dzen/bitmaps/dzen"
 myPP :: PP
