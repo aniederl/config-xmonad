@@ -168,6 +168,11 @@ gridselectWorkspace conf viewFunc = withWindowSet $ \ws -> do
     let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
     gridselect conf (zip wss wss) >>= flip whenJust (windows . viewFunc)
 
+gridselectTopic :: GSConfig WorkspaceId -> X ()
+gridselectTopic conf = withWindowSet $ \ws -> do
+    let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
+    gridselect conf (zip wss wss) >>= flip whenJust (switchTopic myTopicConfig)
+
 
 tiled   = named "Tall" $ (ResizableTall nmaster delta ratio [])
     where
@@ -243,7 +248,7 @@ insKeys =
     , ("M-g",               workspacePrompt myShellXPConfig (switchTopic myTopicConfig))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
-    , ("M-f",               gridselectWorkspace myGSConfig W.view)
+    , ("M-f",               gridselectTopic myGSConfig)
     , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
 
     , ("M-o",               workspacePrompt myXPConfig (addTopic myTopicConfig))
