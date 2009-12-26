@@ -148,10 +148,11 @@ spawnT :: String -> X ()
 spawnT program = currentTopicDir myTopicConfig >>= spawnIn program
 
 spawnShellIn :: Dir -> X ()
-spawnShellIn dir = spawnIn dir myTerminal
+spawnShellIn dir = spawnIn myTerminal dir
 
 spawnIn :: String -> Dir -> X ()
-spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && exec " ++ program
+spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
+{-spawnIn program dir = spawn $ myTerminal ++ "'(cd " ++ dir ++ " && zsh )'"-}
 
 
 addTopic :: TopicConfig -> String -> X ()
@@ -267,7 +268,7 @@ insKeys =
     -- need to add '-name' as first argument or else urxvt won't use it
     , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'screen -c ~/.xmonad/screenrc-scratchpad -D -R scratchpad'"))
 
-    , ("M-e",               spawn myTerminal)
+    , ("M-e",               spawnShell)
     --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
     , ("M-C-<Home>",        spawn "mpc toggle")
