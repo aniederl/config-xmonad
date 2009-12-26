@@ -113,7 +113,10 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 
 
 myTopics :: [Topic]
-myTopics = [ "admin", "com", "web", "xmonad", "music", "documents", "sweb", "bs", "sup", "conf" ]
+myTopics = [ "admin", "com", "web", "web2", "web3", "music",
+             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc" ]
+
+codeTopicAction = spawnShell >> spawnT "gvim"
 
 myTopicConfig :: TopicConfig
 myTopicConfig = TopicConfig
@@ -123,14 +126,16 @@ myTopicConfig = TopicConfig
         , ("bs",     "bs")
         , ("sup",    "src/sup")
         , ("conf",   "etc")
+        , ("slrnrc",   "etc/slrn")
         ]
     , defaultTopicAction = const $ spawnShell
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
-        [ ("conf",      spawnShell >> spawnT "gvim")
-        , ("xmonad",    spawnShell >> spawnT "gvim")
-        , ("sup",       spawnShell >> spawnT "gvim")
+        [ ("xmonad",    codeTopicAction)
+        , ("sup",       codeTopicAction)
+        , ("conf",      codeTopicAction)
+        , ("slrnrc",    codeTopicAction)
         , ("music",     spawn "ario")
         ]
     }
@@ -191,6 +196,7 @@ myLayout =
          $ maximize
          $ onWorkspace "admin"  layoutTerm
          $ onWorkspace "conf"   layoutCode
+         $ onWorkspace "slrnrc" layoutCode
          $ onWorkspace "xmonad" layoutCode
          $ onWorkspace "sweb"   layoutCode
          $ onWorkspace "bs"     layoutCode
