@@ -116,7 +116,7 @@ myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
              "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc" ]
 
-gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let g:LAST_SESSION = \"" ++ session ++ "\"'")
+gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
 codeTopicAction = spawnShell >> spawnT "gvim"
 codeTopicAction' topic = spawnScreenSession topic >> gvimSession topic
