@@ -116,7 +116,13 @@ myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
              "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc" ]
 
+gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let g:LAST_SESSION = \"" ++ session ++ "\"'")
+
 codeTopicAction = spawnShell >> spawnT "gvim"
+codeTopicAction' topic = spawnScreenSession topic >> gvimSession topic
+
+codeTopicSession :: String -> (String, X () )
+codeTopicSession topic = (topic, (spawnScreenSession topic >> gvimSession topic))
 
 myTopicConfig :: TopicConfig
 myTopicConfig = TopicConfig
@@ -126,16 +132,16 @@ myTopicConfig = TopicConfig
         , ("bs",     "bs")
         , ("sup",    "src/sup")
         , ("conf",   "etc")
-        , ("slrnrc",   "etc/slrn")
+        , ("slrnrc", "etc/slrn")
         ]
     , defaultTopicAction = const $ spawnShell
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
-        [ ("xmonad",    codeTopicAction)
-        , ("sup",       codeTopicAction)
+        [ codeTopicSession "xmonad"
+        , codeTopicSession "sup"
         , ("conf",      codeTopicAction)
-        , ("slrnrc",    codeTopicAction)
+        , codeTopicSession "slrnrc"
         , ("music",     spawn "ario")
         ]
     }
@@ -147,8 +153,15 @@ spawnShell = currentTopicDir myTopicConfig >>= spawnShellIn
 spawnT :: String -> X ()
 spawnT program = currentTopicDir myTopicConfig >>= spawnIn program
 
+spawnScreenSession :: String -> X ()
+spawnScreenSession session = currentTopicDir myTopicConfig >>= spawnScreenSessionIn session
+
 spawnShellIn :: Dir -> X ()
 spawnShellIn dir = spawnIn myTerminal dir
+
+screenSession session = myTerminal ++  " -e screen -D -R " ++ session
+spawnScreenSessionIn :: String -> Dir -> X ()
+spawnScreenSessionIn session dir = spawnIn (screenSession session) dir
 
 spawnIn :: String -> Dir -> X ()
 spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
