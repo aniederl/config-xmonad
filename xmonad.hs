@@ -277,13 +277,13 @@ insKeys =
 
 
 multimediaKeys =
-        [ ("XF86AudioLowerVolume", unsafeSpawn "amixer -q set Master 5%-")
-        , ("XF86AudioMute",        unsafeSpawn "amixer -q set Master toggle")
-        , ("XF86AudioRaiseVolume", unsafeSpawn "amixer -q set Master 5%+")
-        , ("XF86AudioPlay",        spawn "mpc toggle")
-        , ("XF86AudioStop",        spawn "mpc stop")
-        , ("XF86AudioPrev",        spawn "mpc prev")
-        , ("XF86AudioNext",        spawn "mpc next")
+        [ ("<XF86AudioLowerVolume>", unsafeSpawn "amixer -q set Master 5%-")
+        , ("<XF86AudioMute>",        unsafeSpawn "amixer -q set Master toggle")
+        , ("<XF86AudioRaiseVolume>", unsafeSpawn "amixer -q set Master 5%+")
+        , ("<XF86AudioPlay>",        spawn "mpc toggle")
+        , ("<XF86AudioStop>",        spawn "mpc stop")
+        , ("<XF86AudioPrev>",        spawn "mpc prev")
+        , ("<XF86AudioNext>",        spawn "mpc next")
         ]
 
 delButtons = []
