@@ -140,9 +140,10 @@ myTopicConfig = TopicConfig
     , topicActions = M.fromList $
         [ ("admin",     spawnShell >*> 2)
         , codeTopicSession "xmonad"
-        , codeTopicSession "sup"
-        , ("conf",      codeTopicAction)
         , codeTopicSession "slrnrc"
+        , codeTopicSession "sup"
+        , codeTopicSession "sweb"
+        , ("conf",      codeTopicAction)
         , ("music",     spawn "ario")
         ]
     }
