@@ -138,7 +138,8 @@ myTopicConfig = TopicConfig
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
-        [ codeTopicSession "xmonad"
+        [ ("admin",     spawnShell >*> 2)
+        , codeTopicSession "xmonad"
         , codeTopicSession "sup"
         , ("conf",      codeTopicAction)
         , codeTopicSession "slrnrc"
