@@ -194,30 +194,34 @@ gridselectTopic conf = withWindowSet $ \ws -> do
     gridselect conf (zip wss wss) >>= flip whenJust (switchTopic myTopicConfig)
 
 
-tiled   = named "Tall" $ (ResizableTall nmaster delta ratio [])
+tiledModifiers a = layoutHints
+                 $ mkToggle1 NBFULL
+                 $ maximize
+                 $ a
+
+tiled ratio = named "tall" $ tiledModifiers $ ResizableTall nmaster delta ratio []
     where
         nmaster = 1
-        ratio   = 1/2
         delta   = 3/100
 
-layoutTerm = (tiled ||| Mirror tiled ||| Full)
-layoutCode = (Mirror tiled ||| tiled ||| Full)
+halfTiled   = tiled $ 1/2
+tiledMirror = named "mirror" $ Mirror $ tiled $ 1/2
+codeMirror  = named "code"   $ Mirror $ tiled $ 4/5
 
-myLayout =
-         layoutHints
-         $ avoidStruts
+layoutTerm = halfTiled  ||| tiledMirror ||| Full
+layoutCode = codeMirror ||| halfTiled   ||| Full
+
+defaultLayouts = Full   ||| halfTiled   ||| tiledMirror
+
+myLayout = avoidStruts
          $ smartBorders
-         $ mkToggle1 NBFULL
-         $ maximize
          $ onWorkspace "admin"  layoutTerm
          $ onWorkspace "conf"   layoutCode
          $ onWorkspace "slrnrc" layoutCode
          $ onWorkspace "xmonad" layoutCode
          $ onWorkspace "sweb"   layoutCode
          $ onWorkspace "bs"     layoutCode
-         $ Full
-             ||| tiled
-             ||| Mirror tiled
+         $ defaultLayouts
 
 
 scratchpadWorkspaceTag = "NSP"
@@ -360,20 +364,11 @@ myPP = defaultPP
     , ppWsSep   = " | "
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
-                    "Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
-                    "Hinted Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
-                    "Hinted Maximize Tall" -> "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
-                    "Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "Hinted Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "Hinted Maximize Mirror Tall" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "Hinted Wide" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
-                    "Hinted Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
-                    "Hinted Maximize Full" -> "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
-                    "Hinted Circle" -> "circle"
-                    "Grid" -> "grid"
-                    "Hinted Magnifier Grid" -> "grid"
-                    "Tabbed" -> "tabbed"
+                    "tall"   ->   "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
+                    "mirror" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
+                    "code"   ->   "code ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
+                    "full"   ->   "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
+                    "Grid"   -> "grid"
                     _        -> pad x
                     )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
