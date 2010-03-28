@@ -42,6 +42,10 @@ import XMonad.Layout.ResizableTile
 import XMonad.Layout.Named
 import XMonad.Layout.MultiToggle
 import XMonad.Layout.MultiToggle.Instances
+import XMonad.Layout.Reflect
+import XMonad.Layout.ComboP
+import XMonad.Layout.TwoPane
+import XMonad.Layout.Tabbed
 
 import XMonad.Prompt
 import XMonad.Prompt.Shell
@@ -114,7 +118,9 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 
 myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
-             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc" ]
+             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
+             "gimp"
+           ]
 
 gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
@@ -214,6 +220,15 @@ layoutCode = codeMirror ||| halfTiled   ||| Full
 
 defaultLayouts = Full   ||| halfTiled   ||| tiledMirror
 
+layoutGimp = named "gimp"
+           $ combineTwoP (TwoPane 0.85 0.15) Full
+             (combineTwoP (reflectHoriz $ TwoPane 0.25 0.25)
+              simpleTabbed
+              (simpleTabbed ||| Full ||| halfTiled)
+              (Role "gimp-dock")
+             )
+             (Role "gimp-toolbox")
+
 myLayout = avoidStruts
          $ smartBorders
          $ onWorkspace "admin"  layoutTerm
@@ -222,6 +237,7 @@ myLayout = avoidStruts
          $ onWorkspace "xmonad" layoutCode
          $ onWorkspace "sweb"   layoutCode
          $ onWorkspace "bs"     layoutCode
+         $ onWorkspace "gimp"   layoutGimp
          $ defaultLayouts
 
 
@@ -334,6 +350,8 @@ myManageHook = composeAll $
                ++
                [ title     =? p --> doF (W.shift ws) | (p, ws) <- myTerminalShifts ]
                ++
+               [ role      =? r --> unfloat | r <- mySinkRoles ]
+               ++
                 -- other hooks
                [ manageDocks
                , scratchpadManageHookDefault
@@ -341,7 +359,8 @@ myManageHook = composeAll $
     where moveToC c w = className =? c --> doF (W.shift w)
           moveToT t w = title     =? t --> doF (W.shift t)
           floatC  c   = className =? c --> doFloat
-          myClassFloats = [ "Gimp", "gimp", "Xmessage", "feh", "Display", "MPlayer", "Kdiff3", "Audacious" ] --"MPlayer",
+          unfloat     = ask >>= doF . W.sink
+          myClassFloats = [ "Xmessage", "feh", "Display", "MPlayer", "Kdiff3", "Audacious" ] --"MPlayer",
           myTitleFloats = [ "Downloads", "Firefox Preferences", "Thunderbird Preferences", "Save As...",
                             "Preferences...", "Confirm...", "Connect via URL", "Enter Password", "Password Required", "Transfer Files", "Rename",
                             "Make Directory", "Delete Files/Directories", "Getting directory listings", "Options", "Chmod", "Add Bookmark",
@@ -355,6 +374,9 @@ myManageHook = composeAll $
                    ++ zip [ "Thunderbird-bin" ] (repeat "com")
                    ++ zip ["Amarokapp", "amarokapp", "Ario"] (repeat "music")
           myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "com")
+          mySinkRoles = [ "gimp-toolbox", "gimp-image-window" ]
+          role = stringProperty "WM_WINDOW_ROLE"
+
 
 myBitmapsDir = "/home/andi/.dzen/bitmaps/dzen"
 myPP :: PP
