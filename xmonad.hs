@@ -275,6 +275,9 @@ insKeys =
     , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
     , ("M-;",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
 
+    -- focus most recently urgent window
+    , ("M-u",               focusUrgent)
+
     -- close only focused copy (kill if last)
     , ("M-S-c",             kill1)
 
@@ -385,6 +388,7 @@ myPP = defaultPP
     , ppVisible = wrap ("^bg(grey30)^fg(grey75)^p(2)") "^p(2)^fg(grey55)^bg()"
     , ppSep     = " ^fg(grey60)^r(3x3)^fg() "
     , ppWsSep   = " | "
+    , ppUrgent  = wrap (dzenColor "#FF0000" "" "{") (dzenColor "#FF0000" "" "}") . pad
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
                     "tall"   ->   "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
@@ -421,7 +425,7 @@ statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-
 
 logBarCmd = "inotail -f -n 30 /var/log/messages | dzen2 -e 'entertitle=uncollapse;leavetitle=collapse' -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*' -sa c -e '' -ta l -x 800 -w 480"
 
-myConfig = withUrgencyHook dzenUrgencyHook {args = ["-bg", "yellow", "-fg", "black"]}
+myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
          $ defaultConfig
          { borderWidth        = 2
          , terminal           = myTerminal
