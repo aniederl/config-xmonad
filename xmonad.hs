@@ -139,6 +139,10 @@ codeTopicSession tg topic = (topic, (spawnScreenSession tg topic >> gvimSession 
 
 
 -- external topic file
+-- format: multiple lines with name and dir each
+--   topic1 topicdir1
+--   topic2 topicdir2
+--   ...
 myTopicFile = myHome ++ "/.xmonad/topics"
 
 zipTopics :: String -> [(String, String)]
