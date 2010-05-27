@@ -121,48 +121,49 @@ myTopics = [ "admin", "com", "web", "web2", "web3", "music",
              "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
              "gimp"
            ]
+myTopicDirs = [ ("xmonad", ".xmonad")
+              , ("sweb",   "bs/sweb")
+              , ("bs",     "bs")
+              , ("sup",    "src/sup")
+              , ("conf",   "etc")
+              , ("slrnrc", "etc/slrn")
+              ]
 
-gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
+gvimSession tg session = spawnT tg ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
-codeTopicAction = spawnShell >> spawnT "gvim"
-codeTopicAction' topic = spawnScreenSession topic >> gvimSession topic
+codeTopicAction tg = spawnShell tg >> spawnT tg "gvim"
+codeTopicAction' tg topic = spawnScreenSession tg topic >> gvimSession tg topic
 
-codeTopicSession :: String -> (String, X () )
-codeTopicSession topic = (topic, (spawnScreenSession topic >> gvimSession topic))
+codeTopicSession :: TopicConfig -> String -> (String, X () )
+codeTopicSession tg topic = (topic, (spawnScreenSession tg topic >> gvimSession tg topic))
 
-myTopicConfig :: TopicConfig
-myTopicConfig = TopicConfig
-    { topicDirs = M.fromList $
-        [ ("xmonad", ".xmonad")
-        , ("sweb",   "bs/sweb")
-        , ("bs",     "bs")
-        , ("sup",    "src/sup")
-        , ("conf",   "etc")
-        , ("slrnrc", "etc/slrn")
-        ]
-    , defaultTopicAction = const $ spawnShell
-    , defaultTopic = "admin"
-    , maxTopicHistory = 10
-    , topicActions = M.fromList $
-        [ ("admin",     spawnShell >*> 2)
-        , codeTopicSession "xmonad"
-        , codeTopicSession "slrnrc"
-        , codeTopicSession "sup"
-        , codeTopicSession "sweb"
-        , ("conf",      codeTopicAction)
-        , ("music",     spawn "ario")
-        ]
-    }
+
+-- external topic file
+myTopicFile = myHome ++ "/.xmonad/topics"
+
+zipTopics :: String -> [(String, String)]
+zipTopics s = (map myZip) ( (map words) (lines s) )
+    where
+        myZip (x:y:xs) = (x, y)
+
+mapFirst :: (a -> c) -> [(a, b)] -> [c]
+mapFirst _ [] = []
+mapFirst f ((x,y):xs) = f x : mapFirst f xs
+
+unzipFirst :: [(a, b)] -> [a]
+unzipFirst [] = []
+unzipFirst ((x,y):xs) = x : unzipFirst xs
+
 
 -- topic helper functions from TopicSpace doc
-spawnShell :: X ()
-spawnShell = currentTopicDir myTopicConfig >>= spawnShellIn
+spawnShell :: TopicConfig -> X ()
+spawnShell tg = currentTopicDir tg >>= spawnShellIn
 
-spawnT :: String -> X ()
-spawnT program = currentTopicDir myTopicConfig >>= spawnIn program
+spawnT :: TopicConfig -> String -> X ()
+spawnT tg program = currentTopicDir tg >>= spawnIn program
 
-spawnScreenSession :: String -> X ()
-spawnScreenSession session = currentTopicDir myTopicConfig >>= spawnScreenSessionIn session
+spawnScreenSession :: TopicConfig -> String -> X ()
+spawnScreenSession tg session = currentTopicDir tg >>= spawnScreenSessionIn session
 
 spawnShellIn :: Dir -> X ()
 spawnShellIn dir = spawnIn myTerminal dir
@@ -195,10 +196,10 @@ gridselectWorkspace conf viewFunc = withWindowSet $ \ws -> do
     let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
     gridselect conf (zip wss wss) >>= flip whenJust (windows . viewFunc)
 
-gridselectTopic :: GSConfig WorkspaceId -> X ()
-gridselectTopic conf = withWindowSet $ \ws -> do
+gridselectTopic :: TopicConfig -> GSConfig WorkspaceId -> X ()
+gridselectTopic tg conf = withWindowSet $ \ws -> do
     let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
-    gridselect conf (zip wss wss) >>= flip whenJust (switchTopic myTopicConfig)
+    gridselect conf (zip wss wss) >>= flip whenJust (switchTopic tg)
 
 
 tiledModifiers a = layoutHints
@@ -228,17 +229,6 @@ layoutGimp = named "gimp"
               (Role "gimp-dock")
              )
              (Role "gimp-toolbox")
-
-myLayout = avoidStruts
-         $ smartBorders
-         $ onWorkspace "admin"  layoutTerm
-         $ onWorkspace "conf"   layoutCode
-         $ onWorkspace "slrnrc" layoutCode
-         $ onWorkspace "xmonad" layoutCode
-         $ onWorkspace "sweb"   layoutCode
-         $ onWorkspace "bs"     layoutCode
-         $ onWorkspace "gimp"   layoutGimp
-         $ defaultLayouts
 
 
 scratchpadWorkspaceTag = "NSP"
@@ -290,14 +280,10 @@ insKeys =
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
 
     -- workspace/topic prompt
-    , ("M-g",               workspacePrompt myShellXPConfig (switchTopic myTopicConfig))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
-    , ("M-f",               gridselectTopic myGSConfig)
     , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
 
-    , ("M-o",               workspacePrompt myXPConfig (addTopic myTopicConfig))
-    , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic myTopicConfig))
     , ("M-C-o",             renameWorkspace myXPConfig)
 
     , ("M-S-<Backspace>",   removeWorkspace)
@@ -306,7 +292,6 @@ insKeys =
     -- need to add '-name' as first argument or else urxvt won't use it
     , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'screen -c ~/.xmonad/screenrc-scratchpad -D -R scratchpad'"))
 
-    , ("M-e",               spawnShell)
     --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
     , ("M-C-<Home>",        spawn "mpc toggle")
@@ -314,11 +299,6 @@ insKeys =
     , ("M-C-<Page_Up>",     spawn "mpc prev")
     , ("M-C-<Page_Down>",   spawn "mpc next")
     ]
-    ++
-    -- switch or shift to Nth last focused workspace (history)
-             [("M" ++ m ++ ('-':k:[]) , f i)
-                  | (i, k) <- zip [1..] ['1'..'9']
-                  , (f, m) <- [(switchNthLastFocused myTopicConfig, ""), (shiftNthLastFocused, "-S")]]
 
 
 multimediaKeys =
@@ -434,7 +414,6 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
          , workspaces         = myTopics
-         , layoutHook         = myLayout
          , manageHook         = myManageHook
          }
          `removeKeysP` delKeys
@@ -445,11 +424,57 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          where x +++ y = mappend x y
 
 main = do
-    checkTopicConfig myTopics myTopicConfig
+    tf <- readFile myTopicFile
+    let ts = zipTopics tf
+    let tc = TopicConfig {
+      topicDirs    = M.fromList $ myTopicDirs ++ ts
+    , defaultTopicAction = const $ spawnShell tc
+    , defaultTopic = "admin"
+    , maxTopicHistory = 10
+    , topicActions = M.fromList $
+        [ ("admin",     spawnShell tc >*> 2)
+        , codeTopicSession tc "xmonad"
+        , codeTopicSession tc "slrnrc"
+        , codeTopicSession tc "sup"
+        , codeTopicSession tc "sweb"
+        , ("conf",      codeTopicAction tc)
+        , ("music",     spawn "ario")
+        ]
+        ++
+        (mapFirst (codeTopicSession tc) ts)
+    }
+    let ws = (workspaces myConfig) ++ (unzipFirst ts)
+    checkTopicConfig ws tc
     din <- spawnPipe statusBarCmd
     sp <- mkSpawner
     xmonad $ myConfig
-        { logHook            = ewmhDesktopsLogHook >> (myDynamicLogWithPP myTopicConfig $ myPP { ppOutput = hPutStrLn din }) >> updatePointer (Relative 1.0 1.0)
+        { logHook            = ewmhDesktopsLogHook >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din }) >> updatePointer (Relative 1.0 1.0)
         , manageHook         = manageSpawn sp <+> myManageHook
+        , workspaces         = ws
+        , layoutHook         = avoidStruts
+                             $ smartBorders
+                             $ onWorkspace "admin"          layoutTerm
+                             $ onWorkspace "gimp"           layoutGimp
+                             $ onWorkspaces [ "conf"
+                                            , "slrnrc"
+                                            , "xmonad"
+                                            , "sweb"
+                                            , "bs"
+                                            ]               layoutCode
+                             $ onWorkspaces (unzipFirst ts) layoutCode
+                             $ defaultLayouts
         }
-        `additionalKeysP` [ ("M-p", shellPromptHere sp myShellXPConfig) ]
+        `additionalKeysP` ( [
+          ("M-p",   shellPromptHere sp myShellXPConfig)
+        , ("M-e",   spawnShell tc)
+        , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
+        , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
+        , ("M-S-o", workspacePrompt myXPConfig (addHiddenTopic tc))
+        , ("M-f",   gridselectTopic tc myGSConfig)
+        ]
+        ++
+        -- switch or shift to Nth last focused workspace (history)
+        [("M" ++ m ++ ('-':k:[]) , f i)
+            | (i, k) <- zip [1..] ['1'..'9']
+            , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S")]]
+        )
