@@ -187,6 +187,13 @@ addTopic tc newtag = addHiddenTopic tc newtag >> switchTopic tc newtag
 addHiddenTopic :: TopicConfig -> String -> X ()
 addHiddenTopic tc newtag = addHiddenWorkspace newtag
 
+-- copy to nth last focused topic
+-- adapted from shiftNthLastFocused
+copyNthLastFocused :: Int -> X ()
+copyNthLastFocused n = do
+    ws <- fmap (listToMaybe . drop n) getLastFocusedTopics
+    whenJust ws $ windows . copy
+
 -- darcs gridselect
 -- | Select a workspace and view it using the given function
 -- (normally 'W.view' or 'W.greedyView')
@@ -480,5 +487,5 @@ main = do
         -- switch or shift to Nth last focused workspace (history)
         [("M" ++ m ++ ('-':k:[]) , f i)
             | (i, k) <- zip [1..] ['1'..'9']
-            , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S")]]
+            , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]]
         )
