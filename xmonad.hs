@@ -487,7 +487,7 @@ main = do
         }
         `additionalKeysP` ( [
           ("M-p",   shellPromptHere sp myShellXPConfig)
-        , ("M-t",   spawnShell tc)
+        , ("M-i",   spawnShell tc)
         , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
         , ("M-S-o", workspacePrompt myXPConfig (addHiddenTopic tc))
