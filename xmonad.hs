@@ -249,6 +249,9 @@ insKeys =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
     , ("M-r",               sendMessage $ ToggleStrut L)
+    , ("M-w",               nextScreen)
+    , ("M-e",               swapNextScreen)
+    , ("M-d",               shiftNextScreen)
     , ("M-h",               moveTo Prev (WSIs $ do ne <- return (isJust . stack)
                                                    ns <- return ((scratchpadWorkspaceTag /=) . tag)
                                                    return (\w -> ne w && ns w)))
@@ -451,16 +454,22 @@ main = do
         , codeTopicSession tc "sweb"
         , ("conf",      codeTopicAction tc)
         , ("music",     spawn "ario")
+        , ("gimp",      spawn "gimp")
         ]
         ++
         (mapFirst (codeTopicSession tc) ts)
     }
     let ws = (workspaces myConfig) ++ (unzipFirst ts)
     checkTopicConfig ws tc
-    din <- spawnPipe statusBarCmd
+    din  <- spawnPipe (statusBarCmd ++ " -xs 1")
+    din2 <- spawnPipe (statusBarCmd ++ " -xs 2")
+    --din <- spawnPipe statusBarCmd
     sp <- mkSpawner
     xmonad $ myConfig
-        { logHook            = ewmhDesktopsLogHook >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din }) >> updatePointer (Relative 1.0 1.0)
+        { logHook            =   ewmhDesktopsLogHook
+                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
+                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din2 })
+                             >>  updatePointer (Relative 1.0 1.0)
         , manageHook         = manageSpawn sp <+> myManageHook
         , workspaces         = ws
         , layoutHook         = avoidStruts
@@ -478,7 +487,7 @@ main = do
         }
         `additionalKeysP` ( [
           ("M-p",   shellPromptHere sp myShellXPConfig)
-        , ("M-e",   spawnShell tc)
+        , ("M-t",   spawnShell tc)
         , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
         , ("M-S-o", workspacePrompt myXPConfig (addHiddenTopic tc))
