@@ -119,7 +119,7 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
              "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
-             "gimp"
+             "gimp", "gitk"
            ]
 myTopicDirs = [ ("xmonad", ".xmonad")
               , ("sweb",   "bs/sweb")
@@ -367,6 +367,7 @@ myManageHook = composeAll $
           myShifts =  zip [ "Opera", "Firefox" ] (repeat "web")
                    ++ zip [ "Thunderbird-bin" ] (repeat "com")
                    ++ zip ["Amarokapp", "amarokapp", "Ario"] (repeat "music")
+                   ++ [ ("Gitk", "gitk") ]
           myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "com")
           mySinkRoles = [ "gimp-toolbox", "gimp-image-window" ]
           role = stringProperty "WM_WINDOW_ROLE"
