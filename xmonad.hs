@@ -327,9 +327,9 @@ insKeys =
 
 
 multimediaKeys =
-        [ ("<XF86AudioLowerVolume>", unsafeSpawn "amixer -q set Master 5%-")
-        , ("<XF86AudioMute>",        unsafeSpawn "amixer -q set Master toggle")
-        , ("<XF86AudioRaiseVolume>", unsafeSpawn "amixer -q set Master 5%+")
+        [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
+        , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
+        , ("<XF86AudioRaiseVolume>", unsafeSpawn "notify-vol up")
         , ("<XF86AudioPlay>",        spawn "mpc toggle")
         , ("<XF86AudioStop>",        spawn "mpc stop")
         , ("<XF86AudioPrev>",        spawn "mpc prev")
