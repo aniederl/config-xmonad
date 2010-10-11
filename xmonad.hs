@@ -46,6 +46,8 @@ import XMonad.Layout.Reflect
 import XMonad.Layout.ComboP
 import XMonad.Layout.TwoPane
 import XMonad.Layout.Tabbed
+import XMonad.Layout.IM
+import XMonad.Layout.Grid
 
 import XMonad.Prompt
 import XMonad.Prompt.Shell
@@ -119,7 +121,7 @@ floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ win
 myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
              "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
-             "gimp", "gitk"
+             "gimp", "gitk", "cal", "im"
            ]
 myTopicDirs = [ ("xmonad", ".xmonad")
               , ("sweb",   "bs/sweb")
@@ -241,6 +243,15 @@ layoutGimp = named "gimp"
              )
              (Role "gimp-toolbox")
 
+layoutPidgin = named "IM"
+             $ reflectHoriz
+             $ withIM size roster
+--             $ reflectHoriz
+             $ layout
+    where
+        layout = Grid
+        size   = 1%5
+        roster = Title "Buddy List"
 
 scratchpadWorkspaceTag = "NSP"
 
@@ -369,8 +380,9 @@ myManageHook = composeAll $
           myIgnores = []
           myShifts =  zip [ "Opera", "Firefox" ] (repeat "web")
                    ++ zip [ "Thunderbird-bin" ] (repeat "com")
-                   ++ zip ["Amarokapp", "amarokapp", "Ario"] (repeat "music")
+                   ++ zip ["Amarokapp", "amarokapp", "Ario" ] (repeat "music")
                    ++ [ ("Gitk", "gitk") ]
+                   ++ zip [ "Pidgin" ] (repeat "im")
           myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "com")
           mySinkRoles = [ "gimp-toolbox", "gimp-image-window" ]
           role = stringProperty "WM_WINDOW_ROLE"
@@ -455,6 +467,8 @@ main = do
         , ("conf",      codeTopicAction tc)
         , ("music",     spawn "ario")
         , ("gimp",      spawn "gimp")
+        , ("cal",       spawnT tc (myTerminal ++ " -e wyrd"))
+        , ("im",        spawn "pidgin")
         ]
         ++
         (mapFirst (codeTopicSession tc) ts)
@@ -476,6 +490,7 @@ main = do
                              $ smartBorders
                              $ onWorkspace "admin"          layoutTerm
                              $ onWorkspace "gimp"           layoutGimp
+                             $ onWorkspace "im"             layoutPidgin
                              $ onWorkspaces [ "conf"
                                             , "slrnrc"
                                             , "xmonad"
