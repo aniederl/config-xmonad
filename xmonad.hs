@@ -118,19 +118,6 @@ floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration De
 floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
 
 
-myTopics :: [Topic]
-myTopics = [ "admin", "com", "web", "web2", "web3", "music",
-             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
-             "gimp", "gitk", "cal", "im"
-           ]
-myTopicDirs = [ ("xmonad", ".xmonad")
-              , ("sweb",   "bs/sweb")
-              , ("bs",     "bs")
-              , ("sup",    "src/sup")
-              , ("conf",   "etc")
-              , ("slrnrc", "etc/slrn")
-              ]
-
 gvimSession tg session = spawnT tg ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
 codeTopicAction tg = spawnShell tg >> spawnT tg "gvim"
@@ -449,6 +436,19 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          `removeMouseBindings` delButtons
          `additionalMouseBindings` insButtons
          where x +++ y = mappend x y
+
+myTopics :: [Topic]
+myTopics = [ "admin", "com", "web", "web2", "web3", "music",
+             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
+             "gimp", "gitk", "cal", "im"
+           ]
+myTopicDirs = [ ("xmonad", ".xmonad")
+              , ("sweb",   "bs/sweb")
+              , ("bs",     "bs")
+              , ("sup",    "src/sup")
+              , ("conf",   "etc")
+              , ("slrnrc", "etc/slrn")
+              ]
 
 main = do
     tf <- readFile myTopicFile
