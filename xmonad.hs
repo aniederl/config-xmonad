@@ -332,6 +332,10 @@ myGestures = M.fromList
         ]
 
 myManageHook = composeAll $
+               {-[ composeOne [ isFullscreen -?> doFullFloat   ] ]-}
+               {-++-}
+               [ composeOne [ isDialog     -?> doCenterFloat ] ]
+               ++
                 -- auto float
                [ className =? c --> doCenterFloat  | c <- myClassFloats ]
                ++
@@ -464,6 +468,7 @@ main = do
         , codeTopicSession tc "slrnrc"
         , codeTopicSession tc "sup"
         , codeTopicSession tc "sweb"
+        , codeTopicSession tc "bs"
         , ("conf",      codeTopicAction tc)
         , ("music",     spawn "ario")
         , ("gimp",      spawn "gimp")
