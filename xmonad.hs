@@ -332,8 +332,8 @@ myGestures = M.fromList
         ]
 
 myManageHook = composeAll $
-               {-[ composeOne [ isFullscreen -?> doFullFloat   ] ]-}
-               {-++-}
+               [ composeOne [ isFullscreen -?> doFullFloat   ] ]
+               ++
                [ composeOne [ isDialog     -?> doCenterFloat ] ]
                ++
                 -- auto float
