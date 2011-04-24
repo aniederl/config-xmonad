@@ -183,18 +183,6 @@ copyNthLastFocused n = do
     ws <- fmap (listToMaybe . drop n) getLastFocusedTopics
     whenJust ws $ windows . copy
 
--- darcs gridselect
--- | Select a workspace and view it using the given function
--- (normally 'W.view' or 'W.greedyView')
---
--- Another option is to shift the current window to the selected workspace:
---
--- > gridselectWorkspace (\ws -> W.greedyView ws . W.shift ws)
-gridselectWorkspace :: GSConfig WorkspaceId ->
-                          (WorkspaceId -> WindowSet -> WindowSet) -> X ()
-gridselectWorkspace conf viewFunc = withWindowSet $ \ws -> do
-    let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
-    gridselect conf (zip wss wss) >>= flip whenJust (windows . viewFunc)
 
 gridselectTopic :: TopicConfig -> GSConfig WorkspaceId -> X ()
 gridselectTopic tg conf = withWindowSet $ \ws -> do
@@ -463,7 +451,7 @@ main = do
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
-        [ ("admin",     spawnShell tc >*> 2)
+        [ ("admin",     spawnScreenSession tc "main" >>  spawnT tc (myTerminal ++ " -e su -l -c 'screen -D -R main'"))
         , codeTopicSession tc "xmonad"
         , codeTopicSession tc "slrnrc"
         , codeTopicSession tc "sup"
@@ -483,13 +471,12 @@ main = do
     din  <- spawnPipe (statusBarCmd ++ " -xs 1")
     din2 <- spawnPipe (statusBarCmd ++ " -xs 2")
     --din <- spawnPipe statusBarCmd
-    sp <- mkSpawner
     xmonad $ myConfig
         { logHook            =   ewmhDesktopsLogHook
                              >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
                              >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din2 })
                              >>  updatePointer (Relative 1.0 1.0)
-        , manageHook         = manageSpawn sp <+> myManageHook
+        , manageHook         = manageSpawn <+> myManageHook
         , workspaces         = ws
         , layoutHook         = avoidStruts
                              $ smartBorders
@@ -506,7 +493,7 @@ main = do
                              $ defaultLayouts
         }
         `additionalKeysP` ( [
-          ("M-p",   shellPromptHere sp myShellXPConfig)
+          ("M-p",   shellPromptHere myShellXPConfig)
         , ("M-i",   spawnShell tc)
         , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
