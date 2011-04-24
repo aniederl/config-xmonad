@@ -76,6 +76,9 @@ myFgColor :: String
 
 myFont = "xft:DejaVu Sans Mono"
 
+--myDzen2Font = "-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*"
+myDzen2Font = myFont ++ ":size=12"
+
 myBgColor = "black"
 myFgColor = "blue"
 
@@ -425,10 +428,9 @@ myDynamicLogWithPP :: TopicConfig -> PP -> X ()
 myDynamicLogWithPP tg pp = myDynamicLogString tg pp >>= io . ppOutput pp
 
 
-statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*' -sa c -e '' -ta l" -- -w 800"
---statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn 'xft:DejaVu Sans:size=14' -sa c -e '' -ta l" -- -w 800"
+statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn \"" ++ myDzen2Font ++ "\" -sa c -e '' -ta l" -- -w 800"
 
-logBarCmd = "inotail -f -n 30 /var/log/messages | dzen2 -e 'entertitle=uncollapse;leavetitle=collapse' -bg '#000000' -fg '#FFFFFF' -h 16 -fn '-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*' -sa c -e '' -ta l -x 800 -w 480"
+logBarCmd = "inotail -f -n 30 /var/log/messages | dzen2 -e 'entertitle=uncollapse;leavetitle=collapse' -bg '#000000' -fg '#FFFFFF' -h 16 -fn \"" ++ myDzen2Font ++ "\" -sa c -e '' -ta l -x 800 -w 480"
 
 myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
          $ defaultConfig
