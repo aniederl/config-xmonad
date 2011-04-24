@@ -169,6 +169,25 @@ spawnIn :: String -> Dir -> X ()
 spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
 {-spawnIn program dir = spawn $ myTerminal ++ "'(cd " ++ dir ++ " && zsh )'"-}
 
+dmenuArgs :: XPConfig -> String
+dmenuArgs c = ""
+          ++ " -fn \"" ++ font c ++ "\""
+          ++ " -nb \"" ++ bgColor c ++ "\""
+          ++ " -nf \"" ++ fgColor c ++ "\""
+          ++ " -sb \"" ++ bgHLight c ++ "\""
+          ++ " -sf \"" ++ fgHLight c ++ "\""
+          ++ text
+          ++ bottom
+    where
+        text = case defaultText c of
+                    "" -> ""
+                    _  -> " -p " ++ defaultText c
+        bottom = case position c of
+                      Bottom -> " -b"
+                      _      -> ""
+
+dmenuPromptCmd :: XPConfig -> String
+dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- " ++ dmenuArgs conf ++ "` && eval \"exec $exe\""
 
 addTopic :: TopicConfig -> String -> X ()
 addTopic tc newtag = addHiddenTopic tc newtag >> switchTopic tc newtag
@@ -493,7 +512,7 @@ main = do
                              $ defaultLayouts
         }
         `additionalKeysP` ( [
-          ("M-p",   shellPromptHere myShellXPConfig)
+          ("M-p",   spawnHere (dmenuPromptCmd myShellXPConfig))
         , ("M-i",   spawnShell tc)
         , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
