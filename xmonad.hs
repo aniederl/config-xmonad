@@ -64,9 +64,12 @@ import Data.List
 import Data.Maybe
 import Data.Monoid ( mappend )
 
+import Control.Monad
+
 import Text.Regex.Posix
 
 import System.Exit
+import System.Directory
 
 import XMonad.StackSet (view, greedyView, tag, hidden, stack)
 
@@ -151,6 +154,16 @@ unzipFirst :: [(a, b)] -> [a]
 unzipFirst [] = []
 unzipFirst ((x,y):xs) = x : unzipFirst xs
 
+readTopicsFile :: String -> IO String
+readTopicsFile f = do
+    e <- doesFileExist f
+    if e then readTopicsFile' f
+         else return ""
+
+readTopicsFile' :: String -> IO String
+readTopicsFile' f = do
+    l <- readFile f
+    return $ l
 
 -- topic helper functions from TopicSpace doc
 spawnShell :: TopicConfig -> X ()
@@ -467,8 +480,8 @@ myTopicDirs = [ ("xmonad", ".xmonad")
               ]
 
 main = do
-    tf <- readFile myTopicFile
-    let ts = zipTopics tf
+    l <- readTopicsFile myTopicFile
+    let ts = zipTopics l
     let tc = TopicConfig {
       topicDirs    = M.fromList $ myTopicDirs ++ ts
     , defaultTopicAction = const $ return()
