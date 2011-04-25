@@ -301,6 +301,23 @@ layoutPidgin = named "IM"
         size   = 1%5
         roster = Title "Buddy List"
 
+-- needs list of code topics as argument
+myLayoutHook ts = avoidStruts
+             $ trackFloating
+             $ smartBorders
+             $ onWorkspace "admin" layoutTerm
+             $ onWorkspace "gimp"  layoutGimp
+             $ onWorkspace "im"    layoutPidgin
+             $ onWorkspaces [ "conf"
+                            , "slrnrc"
+                            , "xmonad"
+                            , "sweb"
+                            , "bs"
+                            ] layoutCode
+             $ onWorkspaces (map topicName ts) layoutCode
+             $ defaultLayouts
+
+
 scratchpadWorkspaceTag = "NSP"
 
 delKeys = []
@@ -351,7 +368,12 @@ insKeys =
     -- note taking
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
 
+    -- run prompt
+    , ("M-p",   spawnHere (dmenuPromptCmd myShellXPConfig))
+
     -- workspace/topic prompt
+    , ("M-o",               workspacePrompt myXPConfig (addTopic))
+    , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
     , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
@@ -373,6 +395,12 @@ insKeys =
 
     -- screenshot
     , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
+    ]
+    ++
+    -- switch or shift to Nth last focused workspace (history)
+    [("M" ++ m ++ ('-':k:[]) , f i)
+        | (i, k) <- zip [1..] ['1'..'9']
+        , (f, m) <- [(switchNthLastFocused myTopicConfig, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
     ]
 
 
@@ -521,32 +549,10 @@ main = do
                              >>  updatePointer (Relative 1.0 1.0)
         , manageHook         = manageSpawn <+> myManageHook
         , workspaces         = ws
-        , layoutHook         = avoidStruts
-                             $ trackFloating
-                             $ smartBorders
-                             $ onWorkspace "admin"          layoutTerm
-                             $ onWorkspace "gimp"           layoutGimp
-                             $ onWorkspace "im"             layoutPidgin
-                             $ onWorkspaces [ "conf"
-                                            , "slrnrc"
-                                            , "xmonad"
-                                            , "sweb"
-                                            , "bs"
-                                            ]               layoutCode
-                             $ onWorkspaces (map topicName ts) layoutCode
-                             $ defaultLayouts
+        , layoutHook         = myLayoutHook ts
         }
         `additionalKeysP` ( [
-          ("M-p",   spawnHere (dmenuPromptCmd myShellXPConfig))
-        , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
-        , ("M-o",   workspacePrompt myXPConfig (addTopic))
-        , ("M-S-o", workspacePrompt myXPConfig (addHiddenTopic))
+          ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-f",   gridselectTopic tc myGSConfig)
-        ]
-        ++
-        -- switch or shift to Nth last focused workspace (history)
-        [("M" ++ m ++ ('-':k:[]) , f i)
-            | (i, k) <- zip [1..] ['1'..'9']
-            , (f, m) <- [(switchNthLastFocused myTopicConfig, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]]
-        )
+        ] )
 
