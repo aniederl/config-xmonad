@@ -131,7 +131,20 @@ codeTopicAction = spawnShell >> spawnT "gvim"
 codeTopicAction' topic = spawnScreenSession topic >> gvimSession topic
 
 codeTopicSession :: String -> (String, X () )
-codeTopicSession topic = (topic, (spawnScreenSession topic >> gvimSession topic))
+codeTopicSession topic = (topic, codeTopicSession' topic)
+
+codeTopicSession' :: String -> X ()
+codeTopicSession' topic = spawnScreenSession topic >> gvimSession topic
+
+data TopicItem = TopicItem { topicName   :: Topic
+                           , topicDir    :: Dir
+                           , topicAction :: X ()
+                           }
+
+topic  n d a = TopicItem n d a
+topic' n d   = topic n d (myDefaultTopicAction)
+
+ctopic n d   = topic n d (codeTopicSession' n)
 
 myTopics :: [Topic]
 myTopics = [ "admin", "com", "web", "web2", "web3", "music",
@@ -146,9 +159,11 @@ myTopicDirs = [ ("xmonad", ".xmonad")
               , ("slrnrc", "etc/slrn")
               ]
 
+myDefaultTopicAction = return ()
+
 myTopicConfig = TopicConfig {
       topicDirs    = M.fromList $ myTopicDirs
-    , defaultTopicAction = const $ return()
+    , defaultTopicAction = const $ myDefaultTopicAction
     , defaultTopic = "admin"
     , maxTopicHistory = 10
     , topicActions = M.fromList $
@@ -174,22 +189,10 @@ myTopicConfig = TopicConfig {
 --   ...
 myTopicFile = myHome ++ "/.xmonad/topics"
 
-data TopicDirItem = TopicDirItem { topicName :: Topic
-                                 , topicDir  :: Dir
-                                 }
-
-zipTopics :: String -> [TopicDirItem]
+zipTopics :: String -> [TopicItem]
 zipTopics s = (map myZip) ( (map words) (lines s) )
     where
-        myZip (x:y:xs) = TopicDirItem x y
-
-mapFirst :: (a -> c) -> [(a, b)] -> [c]
-mapFirst _ [] = []
-mapFirst f ((x,y):xs) = f x : mapFirst f xs
-
-unzipFirst :: [(a, b)] -> [a]
-unzipFirst [] = []
-unzipFirst ((x,y):xs) = x : unzipFirst xs
+        myZip (x:y:xs) = ctopic x y
 
 readTopicsFile :: String -> IO String
 readTopicsFile f = do
@@ -535,8 +538,8 @@ main = do
     l <- readTopicsFile myTopicFile
     let ts = zipTopics l
     let tc = myTopicConfig {
-      topicDirs    = topicDirs    myTopicConfig <+> (M.fromList $ map (\(TopicDirItem n d) -> (n, d)) ts)
-    , topicActions = topicActions myTopicConfig <+> (M.fromList $ map (\(TopicDirItem n d) -> (codeTopicSession n)) ts)
+      topicDirs    = topicDirs    myTopicConfig <+> (M.fromList $ map (\(TopicItem n d a) -> (n, d)) ts)
+    , topicActions = topicActions myTopicConfig <+> (M.fromList $ map (\(TopicItem n d a) -> (codeTopicSession n)) ts)
     }
     let ws = (workspaces myConfig) ++ (map topicName ts)
     checkTopicConfig ws tc
