@@ -320,6 +320,9 @@ insKeys =
     , ("M-C-<End>",         spawn "mpc stop")
     , ("M-C-<Page_Up>",     spawn "mpc prev")
     , ("M-C-<Page_Down>",   spawn "mpc next")
+
+    -- screenshot
+    , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
     ]
 
 
@@ -407,7 +410,7 @@ myPP = defaultPP
                     _        -> pad x
                     )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
-    , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
+    , ppSort    = fmap (scratchpadFilterOutWorkspace.) $ ppSort defaultPP
     }
 
 
