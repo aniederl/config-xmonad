@@ -1,7 +1,7 @@
-{-# OPTIONS_GHC -cpp #-}
-{-
-#include <X11/XF86keysym.h>
--}
+-- {-# OPTIONS_GHC -cpp #-}
+-- {-
+-- #include <X11/XF86keysym.h>
+-- -}
 
 import XMonad
 
@@ -126,16 +126,16 @@ floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration De
 floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
 
 
-gvimSession session = spawnT ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
+gvimSession tc session = spawnT' tc ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
-codeTopicAction = spawnShell >> spawnT "gvim"
-codeTopicAction' topic = spawnScreenSession topic >> gvimSession topic
+codeTopicAction' tc = spawnShell tc >> spawnT' tc "gvim"
+codeTopicAction = codeTopicAction' myTopicConfig
 
-codeTopicSession :: String -> (String, X () )
-codeTopicSession topic = (topic, codeTopicSession' topic)
+codeTopicSession :: TopicConfig -> String -> (String, X () )
+codeTopicSession tc topic = (topic, codeTopicSession' tc topic)
 
-codeTopicSession' :: String -> X ()
-codeTopicSession' topic = spawnScreenSession topic >> gvimSession topic
+codeTopicSession' :: TopicConfig -> String -> X ()
+codeTopicSession' tc topic = spawnScreenSession' tc topic >> gvimSession tc topic
 
 
 data TopicType = Code
@@ -157,9 +157,9 @@ topicItem name dir action ttype = TopicItem name topicdir action ttype
 topicItem' :: Topic -> Dir -> X () -> TopicItem
 topicItem' name dir action = topicItem name dir action Other
 
-typedTopicItem :: Topic -> Dir -> String -> TopicItem
-typedTopicItem name dir ttype | ttype == "code" = topicItem  name dir (codeTopicSession' name) Code
-                              | otherwise      = topicItem' name dir myDefaultTopicAction
+typedTopicItem :: TopicConfig -> Topic -> Dir -> String -> TopicItem
+typedTopicItem tc name dir ttype | ttype == "code" = topicItem  name dir (codeTopicSession' tc name) Code
+                                 | otherwise      = topicItem' name dir myDefaultTopicAction
 
 
 -- actions
@@ -199,7 +199,7 @@ myTopics = map topicItem'' myActionTopics
            map otherTopicItem myOtherTopics
     where
         topicItem'' (name, dir, action) = topicItem' name dir action
-        codeTopicItem  (name, dir)      = topicItem name dir (codeTopicSession' name) Code
+        codeTopicItem  (name, dir)      = topicItem name dir (codeTopicSession' myTopicConfig name) Code
         otherTopicItem name             = topicItem' name ""  myDefaultTopicAction
 
 myTopicNames :: [Topic]
@@ -228,13 +228,15 @@ myTopicConfig = TopicConfig {
 --   topic2 topicdir2
 --   topic3 topicdir3 code
 --   ...
-myTopicFile = myHome ++ "/.xmonad/topics"
+myTopicFile     = myHome ++ "/.xmonad/topics"
+myCodeTopicFile = myHome ++ "/.xmonad/code-topics"
 
-zipTopics :: String -> [TopicItem]
-zipTopics s = (map myZip) ( (map words) (lines s) )
+zipTopics' :: TopicConfig -> String -> String -> [TopicItem]
+zipTopics' tc dc s = (map myZip) ( (map words) (lines s) )
     where
-        myZip (x:y:z:xs) = typedTopicItem x y z
-        myZip (x:y:xs) = typedTopicItem x y "other"
+        myZip (x:y:z:xs) = typedTopicItem tc x y z
+        myZip (x:y:xs)   = typedTopicItem tc x y dc
+zipTopics tc s = zipTopics' tc "other" s
 
 readTopicsFile :: String -> IO String
 readTopicsFile f = do
@@ -248,14 +250,18 @@ readTopicsFile' f = do
     return $ l
 
 -- topic helper functions from TopicSpace doc
-spawnShell :: X ()
-spawnShell = currentTopicDir myTopicConfig >>= spawnShellIn
+spawnShell :: TopicConfig -> X ()
+spawnShell tc = currentTopicDir tc >>= spawnShellIn
 
-spawnT :: String -> X ()
-spawnT program = currentTopicDir myTopicConfig >>= spawnIn program
+spawnT' :: TopicConfig -> String -> X ()
+spawnT' tc program = currentTopicDir tc >>= spawnIn program
+spawnT program = spawnT' myTopicConfig program
+
+spawnScreenSession' :: TopicConfig -> String -> X ()
+spawnScreenSession' tc session = currentTopicDir tc >>= spawnScreenSessionIn session
 
 spawnScreenSession :: String -> X ()
-spawnScreenSession session = currentTopicDir myTopicConfig >>= spawnScreenSessionIn session
+spawnScreenSession session = spawnScreenSession' myTopicConfig session
 
 spawnShellIn :: Dir -> X ()
 spawnShellIn dir = spawnIn myTerminal dir
@@ -288,8 +294,8 @@ dmenuArgs c = ""
 dmenuPromptCmd :: XPConfig -> String
 dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- " ++ dmenuArgs conf ++ "` && eval \"exec $exe\""
 
-addTopic :: String -> X ()
-addTopic newtag = addHiddenTopic newtag >> switchTopic myTopicConfig newtag
+addTopic :: TopicConfig -> String -> X ()
+addTopic tc newtag = addHiddenTopic newtag >> switchTopic tc newtag
 
 addHiddenTopic :: String -> X ()
 addHiddenTopic newtag = addHiddenWorkspace newtag
@@ -413,7 +419,6 @@ insKeys =
     , ("M-p",   spawnHere (dmenuPromptCmd myShellXPConfig))
 
     -- workspace/topic prompt
-    , ("M-o",               workspacePrompt myXPConfig (addTopic))
     , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
@@ -437,13 +442,6 @@ insKeys =
     -- screenshot
     , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
     ]
-    ++
-    -- switch or shift to Nth last focused workspace (history)
-    [("M" ++ m ++ ('-':k:[]) , f i)
-        | (i, k) <- zip [1..] ['1'..'9']
-        , (f, m) <- [(switchNthLastFocused myTopicConfig, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
-    ]
-
 
 multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
@@ -543,11 +541,11 @@ onlyTitle pp = defaultPP { ppCurrent = const ""
                          , ppLayout  = ppLayout pp
                          , ppTitle   = ppTitle pp }
 
-myDynamicLogString :: PP -> X String
-myDynamicLogString pp = mergePPOutputs [TS.pprWindowSet myTopicConfig, dynamicLogString . onlyTitle] pp
+myDynamicLogString :: TopicConfig -> PP -> X String
+myDynamicLogString tc pp = mergePPOutputs [TS.pprWindowSet tc, dynamicLogString . onlyTitle] pp
 
-myDynamicLogWithPP :: PP -> X ()
-myDynamicLogWithPP pp = myDynamicLogString pp >>= io . ppOutput pp
+myDynamicLogWithPP :: TopicConfig -> PP -> X ()
+myDynamicLogWithPP tc pp = myDynamicLogString tc pp >>= io . ppOutput pp
 
 
 statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn \"" ++ myDzen2Font ++ "\" -sa c -e '' -ta l" -- -w 800"
@@ -573,8 +571,10 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          where x +++ y = mappend x y
 
 main = do
-    l <- readTopicsFile myTopicFile
-    let ts = zipTopics l
+    tf  <- readTopicsFile myTopicFile
+    ctf <- readTopicsFile myCodeTopicFile
+    let tc = myTopicConfig
+    let ts = zipTopics tc tf ++ zipTopics' tc "code" ctf
     let tc = myTopicConfig {
       topicDirs    = topicDirs    myTopicConfig <+> (topicDirMap ts)
     , topicActions = topicActions myTopicConfig <+> (topicActionMap ts)
@@ -585,16 +585,25 @@ main = do
     din2 <- spawnPipe (statusBarCmd ++ " -xs 2")
     xmonad $ myConfig
         { logHook            =  ewmhDesktopsLogHook
-                             >> (myDynamicLogWithPP $ myPP { ppOutput = hPutStrLn din })
-                             >> (myDynamicLogWithPP $ myPP { ppOutput = hPutStrLn din2 })
+                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
+                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din2 })
                              >>  updatePointer (Relative 1.0 1.0)
         , manageHook         = manageSpawn <+> myManageHook
         , workspaces         = ws
         , layoutHook         = myLayoutHook $ myTopics <+> ts
         }
         `additionalKeysP` ( [
-          ("M-i",   spawnShell)
-        , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
-        , ("M-f",   gridselectTopic tc myGSConfig)
-        ] )
+              ("M-i",   spawnShell tc)
+            , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
+            , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
+            , ("M-f",   gridselectTopic tc myGSConfig)
+            ]
+            ++
+            -- switch or shift to Nth last focused workspace (history)
+            [("M" ++ m ++ ('-':k:[]) , f i)
+            | (i, k) <- zip [1..] ['1'..'9']
+            , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
+            ]
+
+       )
 
