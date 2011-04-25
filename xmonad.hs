@@ -1,7 +1,7 @@
--- {-# OPTIONS_GHC -cpp #-}
--- {-
--- #include <X11/XF86keysym.h>
--- -}
+{-# OPTIONS_GHC -cpp #-}
+{-
+#include <X11/XF86keysym.h>
+-}
 
 import XMonad
 
@@ -61,6 +61,7 @@ import XMonad.Util.Scratchpad
 
 import Data.Ratio
 import Data.List
+import Data.Map (Map)
 import Data.Maybe
 import Data.Monoid ( mappend )
 
@@ -136,63 +137,104 @@ codeTopicSession topic = (topic, codeTopicSession' topic)
 codeTopicSession' :: String -> X ()
 codeTopicSession' topic = spawnScreenSession topic >> gvimSession topic
 
+
+data TopicType = Code
+               | Other
+    deriving Eq
 data TopicItem = TopicItem { topicName   :: Topic
                            , topicDir    :: Dir
                            , topicAction :: X ()
+                           , topicType   :: TopicType
                            }
 
-topic  n d a = TopicItem n d a
-topic' n d   = topic n d (myDefaultTopicAction)
+topicItem :: Topic -> Dir -> X () -> TopicType -> TopicItem
+topicItem name dir action ttype = TopicItem name topicdir action ttype
+    where topicdir =
+              case dir of
+                   "" -> "${HOME}/"
+                   _  -> dir
 
-ctopic n d   = topic n d (codeTopicSession' n)
+topicItem' :: Topic -> Dir -> X () -> TopicItem
+topicItem' name dir action = topicItem name dir action Other
 
-myTopics :: [Topic]
-myTopics = [ "admin", "com", "web", "web2", "web3", "music",
-             "xmonad", "documents", "sweb", "bs", "sup", "conf", "slrnrc",
-             "gimp", "gitk", "cal", "im"
-           ]
-myTopicDirs = [ ("xmonad", ".xmonad")
-              , ("sweb",   "bs/sweb")
-              , ("bs",     "bs")
-              , ("sup",    "src/sup")
-              , ("conf",   "etc")
-              , ("slrnrc", "etc/slrn")
-              ]
+typedTopicItem :: Topic -> Dir -> String -> TopicItem
+typedTopicItem name dir ttype | ttype == "code" = topicItem  name dir (codeTopicSession' name) Code
+                              | otherwise      = topicItem' name dir myDefaultTopicAction
+
+
+-- actions
+myActionTopics' :: [(Topic, X ())]
+myActionTopics' = [ ("admin", spawnScreenSession "main" >>  spawnT (myTerminal ++ " -e su -l -c 'screen -D -R main'"))
+                  , ("music", spawn "ario")
+                  , ("gimp",  spawn "gimp")
+                  , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
+                  , ("im",    spawn "pidgin")
+                  ]
+
+myActionTopics :: [(Topic, Dir, X ())]
+myActionTopics  = [ ("conf", "etc", codeTopicAction)
+                  ]
+                  ++
+                  map (\(n, a) -> (n, "", a)) myActionTopics'
+
+myCodeTopics = [ ("xmonad", ".xmonad")
+               , ("sweb",   "bs/sweb")
+               , ("bs",     "bs")
+               , ("sup",    "src/sup")
+               , ("slrnrc", "etc/slrn")
+               ]
+
+myOtherTopics = [ "com"
+                , "web"
+                , "documents"
+                , "gitk"
+                ]
+
+
+myTopics :: [TopicItem]
+myTopics = map topicItem'' myActionTopics
+           ++
+           map codeTopicItem  myCodeTopics
+           ++
+           map otherTopicItem myOtherTopics
+    where
+        topicItem'' (name, dir, action) = topicItem' name dir action
+        codeTopicItem  (name, dir)      = topicItem name dir (codeTopicSession' name) Code
+        otherTopicItem name             = topicItem' name ""  myDefaultTopicAction
+
+myTopicNames :: [Topic]
+myTopicNames = map topicName myTopics
+
+topicDirMap :: [TopicItem] -> Map Topic Dir
+topicDirMap ts = M.fromList $ map (\(TopicItem n d _ _) -> (n, d)) ts
+
+topicActionMap :: [TopicItem] -> Map Topic (X ())
+topicActionMap ts = M.fromList $ map (\(TopicItem n _ a _) -> (n, a)) ts
 
 myDefaultTopicAction = return ()
 
 myTopicConfig = TopicConfig {
-      topicDirs    = M.fromList $ myTopicDirs
+      topicDirs    = topicDirMap myTopics
     , defaultTopicAction = const $ myDefaultTopicAction
     , defaultTopic = "admin"
     , maxTopicHistory = 10
-    , topicActions = M.fromList $
-        [ ("admin",     spawnScreenSession "main" >>  spawnT (myTerminal ++ " -e su -l -c 'screen -D -R main'"))
-        , codeTopicSession "xmonad"
-        , codeTopicSession "slrnrc"
-        , codeTopicSession "sup"
-        , codeTopicSession "sweb"
-        , codeTopicSession "bs"
-        , ("conf",      codeTopicAction)
-        , ("music",     spawn "ario")
-        , ("gimp",      spawn "gimp")
-        , ("cal",       spawnT (myTerminal ++ " -e wyrd"))
-        , ("im",        spawn "pidgin")
-        ]
+    , topicActions = topicActionMap myTopics
     }
 
 
 -- external topic file
--- format: multiple lines with name and dir each
---   topic1 topicdir1
+-- format: multiple lines with name, dir and type each
+--   topic1 topicdir1 code
 --   topic2 topicdir2
+--   topic3 topicdir3 code
 --   ...
 myTopicFile = myHome ++ "/.xmonad/topics"
 
 zipTopics :: String -> [TopicItem]
 zipTopics s = (map myZip) ( (map words) (lines s) )
     where
-        myZip (x:y:xs) = ctopic x y
+        myZip (x:y:z:xs) = typedTopicItem x y z
+        myZip (x:y:xs) = typedTopicItem x y "other"
 
 readTopicsFile :: String -> IO String
 readTopicsFile f = do
@@ -311,14 +353,10 @@ myLayoutHook ts = avoidStruts
              $ onWorkspace "admin" layoutTerm
              $ onWorkspace "gimp"  layoutGimp
              $ onWorkspace "im"    layoutPidgin
-             $ onWorkspaces [ "conf"
-                            , "slrnrc"
-                            , "xmonad"
-                            , "sweb"
-                            , "bs"
-                            ] layoutCode
-             $ onWorkspaces (map topicName ts) layoutCode
+             $ onWorkspaces codeWS layoutCode
              $ defaultLayouts
+    where
+        codeWS = [ topicName t | t <- ts, topicType t == Code ]
 
 
 scratchpadWorkspaceTag = "NSP"
@@ -524,7 +562,7 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          , handleEventHook    = ewmhDesktopsEventHook
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
-         , workspaces         = myTopics
+         , workspaces         = myTopicNames
          , manageHook         = myManageHook
          }
          `removeKeysP` delKeys
@@ -538,8 +576,8 @@ main = do
     l <- readTopicsFile myTopicFile
     let ts = zipTopics l
     let tc = myTopicConfig {
-      topicDirs    = topicDirs    myTopicConfig <+> (M.fromList $ map (\(TopicItem n d a) -> (n, d)) ts)
-    , topicActions = topicActions myTopicConfig <+> (M.fromList $ map (\(TopicItem n d a) -> (codeTopicSession n)) ts)
+      topicDirs    = topicDirs    myTopicConfig <+> (topicDirMap ts)
+    , topicActions = topicActions myTopicConfig <+> (topicActionMap ts)
     }
     let ws = (workspaces myConfig) ++ (map topicName ts)
     checkTopicConfig ws tc
@@ -552,10 +590,11 @@ main = do
                              >>  updatePointer (Relative 1.0 1.0)
         , manageHook         = manageSpawn <+> myManageHook
         , workspaces         = ws
-        , layoutHook         = myLayoutHook ts
+        , layoutHook         = myLayoutHook $ myTopics <+> ts
         }
         `additionalKeysP` ( [
-          ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
+          ("M-i",   spawnShell)
+        , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
         , ("M-f",   gridselectTopic tc myGSConfig)
         ] )
 
