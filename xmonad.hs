@@ -257,7 +257,6 @@ delKeys = []
 insKeys =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
-    , ("M-r",               sendMessage $ ToggleStrut L)
     , ("M-w",               nextScreen)
     , ("M-e",               swapNextScreen)
     , ("M-d",               shiftNextScreen)
@@ -307,7 +306,7 @@ insKeys =
 
     , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
 
-    , ("M-C-o",             renameWorkspace myXPConfig)
+    , ("M-r",               renameWorkspace myXPConfig)
 
     , ("M-S-<Backspace>",   removeWorkspace)
 
