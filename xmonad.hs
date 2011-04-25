@@ -48,6 +48,7 @@ import XMonad.Layout.TwoPane
 import XMonad.Layout.Tabbed
 import XMonad.Layout.IM
 import XMonad.Layout.Grid
+import XMonad.Layout.TrackFloating
 
 import XMonad.Prompt
 import XMonad.Prompt.Shell
@@ -503,6 +504,7 @@ main = do
         , manageHook         = manageSpawn <+> myManageHook
         , workspaces         = ws
         , layoutHook         = avoidStruts
+                             $ trackFloating
                              $ smartBorders
                              $ onWorkspace "admin"          layoutTerm
                              $ onWorkspace "gimp"           layoutGimp
