@@ -415,9 +415,6 @@ insKeys =
     -- note taking
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
 
-    -- run prompt
-    , ("M-p",   spawnHere (dmenuPromptCmd myShellXPConfig))
-
     -- workspace/topic prompt
     , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic))
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
@@ -597,6 +594,9 @@ main = do
             , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
             , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
             , ("M-f",   gridselectTopic tc myGSConfig)
+
+            -- run prompt
+            , ("M-p",   spawnT' tc (dmenuPromptCmd myShellXPConfig))
             ]
             ++
             -- switch or shift to Nth last focused workspace (history)
