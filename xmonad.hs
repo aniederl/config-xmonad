@@ -376,6 +376,9 @@ myLayoutHook ts = avoidStruts
 
 scratchpadWorkspaceTag = "NSP"
 
+myToggleWS :: X ()
+myToggleWS = windows $ view =<< tag . head . scratchpadFilterOutWorkspace . hidden
+
 delKeys = []
 insKeys tc =
     [ ("M-<Return>",        promote)
@@ -407,8 +410,8 @@ insKeys tc =
     , ("M-b",               banish LowerRight)
 
     -- toggle to last workspace (like C-a C-a in screen)
-    , ("M-a",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
-    , ("M-;",               (windows $ view =<< tag . head . (filter (\(W.Workspace tag _ _) -> tag /= scratchpadWorkspaceTag)) . hidden))
+    , ("M-a",               myToggleWS)
+    , ("M-;",               myToggleWS)
 
     -- focus most recently urgent window
     , ("M-u",               focusUrgent)
