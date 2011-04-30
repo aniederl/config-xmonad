@@ -98,15 +98,15 @@ myTheme = defaultTheme
     }
 
 myXPConfig = defaultXPConfig
-    { font              = myFont ++ promptFontSize,
-      bgColor           = myBgColor,
-      fgColor           = myFgColor,
-      bgHLight          = myFgColor,
-      fgHLight          = myBgColor,
-      borderColor       = myBgColor,
-      promptBorderWidth = 0,
-      position          = Top,
-      defaultText       = ""
+    { font              = myFont ++ promptFontSize
+    , bgColor           = myBgColor
+    , fgColor           = myFgColor
+    , bgHLight          = myFgColor
+    , fgHLight          = myBgColor
+    , borderColor       = myBgColor
+    , promptBorderWidth = 0
+    , position          = Top
+    , defaultText       = ""
     }
 
 myShellXPConfig = myXPConfig
@@ -282,13 +282,13 @@ spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
 
 dmenuArgs :: XPConfig -> String
 dmenuArgs c = ""
-          ++ " -fn \"" ++ font c ++ "\""
-          ++ " -nb \"" ++ bgColor c ++ "\""
-          ++ " -nf \"" ++ fgColor c ++ "\""
-          ++ " -sb \"" ++ bgHLight c ++ "\""
-          ++ " -sf \"" ++ fgHLight c ++ "\""
-          ++ text
-          ++ bottom
+            ++ " -fn \"" ++ font c ++ "\""
+            ++ " -nb \"" ++ bgColor c ++ "\""
+            ++ " -nf \"" ++ fgColor c ++ "\""
+            ++ " -sb \"" ++ bgHLight c ++ "\""
+            ++ " -sf \"" ++ fgHLight c ++ "\""
+            ++ text
+            ++ bottom
     where
         text = case defaultText c of
                     "" -> ""
@@ -298,7 +298,9 @@ dmenuArgs c = ""
                       _      -> ""
 
 dmenuPromptCmd :: XPConfig -> String
-dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- " ++ dmenuArgs conf ++ "` && eval \"exec $exe\""
+dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
+                    ++ dmenuArgs conf
+                    ++ "` && eval \"exec $exe\""
 
 addTopic :: TopicConfig -> String -> X ()
 addTopic tc newtag = addHiddenTopic newtag >> switchTopic tc newtag
@@ -360,13 +362,13 @@ layoutPidgin = named "IM"
 
 -- needs list of code topics as argument
 myLayoutHook ts = avoidStruts
-             $ trackFloating
-             $ smartBorders
-             $ onWorkspace "admin" layoutTerm
-             $ onWorkspace "gimp"  layoutGimp
-             $ onWorkspace "im"    layoutPidgin
-             $ onWorkspaces codeWS layoutCode
-             $ defaultLayouts
+                $ trackFloating
+                $ smartBorders
+                $ onWorkspace "admin" layoutTerm
+                $ onWorkspace "gimp"  layoutGimp
+                $ onWorkspace "im"    layoutPidgin
+                $ onWorkspaces codeWS layoutCode
+                $ defaultLayouts
     where
         codeWS = [ topicName t | t <- ts, topicType t == Code ]
 
@@ -417,10 +419,10 @@ insKeys tc =
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
 
     -- spawn a terminal
-    , ("M-i",   spawnShell tc)
+    , ("M-i",               spawnShell tc)
 
     -- run prompt
-    , ("M-p",   spawnT' tc (dmenuPromptCmd myShellXPConfig))
+    , ("M-p",               spawnT' tc (dmenuPromptCmd myShellXPConfig))
 
     -- note taking
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
@@ -481,29 +483,29 @@ myGestures = M.fromList
         ]
 
 myManageHook = composeAll $
-               [ composeOne [ isFullscreen -?> doFullFloat   ] ]
-               ++
-               [ composeOne [ isDialog     -?> doCenterFloat ] ]
-               ++
-                -- auto float
-               [ className =? c --> doCenterFloat  | c <- myClassFloats ]
-               ++
-               [ title     =? t --> doCenterFloat  | t <- myTitleFloats ]
-               ++
-                -- ignore
-               [ resource  =? r --> doIgnore | r <- myIgnores ]
-               ++
-                -- shifts
-               [ className =? c --> doF (W.shift ws) | (c, ws) <- myShifts ]
-               ++
-               [ title     =? p --> doF (W.shift ws) | (p, ws) <- myTerminalShifts ]
-               ++
-               [ role      =? r --> unfloat | r <- mySinkRoles ]
-               ++
-                -- other hooks
-               [ manageDocks
-               , scratchpadManageHookDefault
-               ]
+             [ composeOne [ isFullscreen -?> doFullFloat   ] ]
+             ++
+             [ composeOne [ isDialog     -?> doCenterFloat ] ]
+             ++
+              -- auto float
+             [ className =? c --> doCenterFloat  | c <- myClassFloats ]
+             ++
+             [ title     =? t --> doCenterFloat  | t <- myTitleFloats ]
+             ++
+              -- ignore
+             [ resource  =? r --> doIgnore | r <- myIgnores ]
+             ++
+              -- shifts
+             [ className =? c --> doF (W.shift ws) | (c, ws) <- myShifts ]
+             ++
+             [ title     =? p --> doF (W.shift ws) | (p, ws) <- myTerminalShifts ]
+             ++
+             [ role      =? r --> unfloat | r <- mySinkRoles ]
+             ++
+              -- other hooks
+             [ manageDocks
+             , scratchpadManageHookDefault
+             ]
     where moveToC c w = className =? c --> doF (W.shift w)
           moveToT t w = title     =? t --> doF (W.shift t)
           floatC  c   = className =? c --> doFloat
@@ -544,7 +546,7 @@ myPP = defaultPP
                     "full"   ->   "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
                     "Grid"   -> "grid"
                     _        -> pad x
-                    )
+        )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
     , ppSort    = fmap (scratchpadFilterOutWorkspace.) $ ppSort defaultPP
     }
@@ -567,9 +569,21 @@ myDynamicLogWithPP :: TopicConfig -> PP -> X ()
 myDynamicLogWithPP tc pp = myDynamicLogString tc pp >>= io . ppOutput pp
 
 
-statusBarCmd = "dzen2 -bg '#000000' -fg '#FFFFFF' -h 16 -fn \"" ++ myDzen2Font ++ "\" -sa c -e '' -ta l" -- -w 800"
+statusBarCmd = "dzen2"
+             ++ " -bg '#000000'"
+             ++ " -fg '#FFFFFF'"
+             ++ " -h 16 -fn \"" ++ myDzen2Font ++ "\""
+             ++ " -sa c -e '' -ta l"
+--             ++ " -w 800"
 
-logBarCmd = "inotail -f -n 30 /var/log/messages | dzen2 -e 'entertitle=uncollapse;leavetitle=collapse' -bg '#000000' -fg '#FFFFFF' -h 16 -fn \"" ++ myDzen2Font ++ "\" -sa c -e '' -ta l -x 800 -w 480"
+logBarCmd = "inotail -f -n 30"
+          ++ "/var/log/messages | dzen2"
+          ++ " -e 'entertitle=uncollapse;leavetitle=collapse'"
+          ++ " -bg '#000000'"
+          ++ " -fg '#FFFFFF'"
+          ++ " -h 16 -fn \"" ++ myDzen2Font ++ "\""
+          ++ " -sa c -e '' -ta l"
+          ++ " -x 800 -w 480"
 
 myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
          $ defaultConfig
@@ -595,13 +609,14 @@ updateMyConfig conf tc ts = conf
                           `additionalKeysP` (insKeys tc)
 
 main = do
-    tf  <- readTopicsFile myTopicFile
-    ctf <- readTopicsFile myCodeTopicFile
-    let ts = zipTopics myTopicConfig tf ++ zipTopics' myTopicConfig "code" ctf
-    let tc = updateTopicConfig myTopicConfig ts
-    let conf = updateMyConfig myConfig tc (myTopics ++ ts)
-    din  <- spawnPipe (statusBarCmd ++ " -xs 1")
-    din2 <- spawnPipe (statusBarCmd ++ " -xs 2")
+    tf   <- readTopicsFile myTopicFile
+    ctf  <- readTopicsFile myCodeTopicFile
+    din  <- spawnPipe $ statusBarCmd ++ " -xs 1"
+    din2 <- spawnPipe $ statusBarCmd ++ " -xs 2"
+    let ts   = zipTopics  myTopicConfig tf
+             ++ zipTopics' myTopicConfig "code" ctf
+    let tc   = updateTopicConfig myTopicConfig ts
+    let conf = updateMyConfig myConfig tc $ myTopics ++ ts
     xmonad $ conf
         { logHook            = logHook conf
                              >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
