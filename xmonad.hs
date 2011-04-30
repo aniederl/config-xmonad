@@ -63,6 +63,7 @@ import Data.Ratio
 import Data.List
 import Data.Map (Map)
 import Data.Maybe
+import Data.Ord
 
 import Control.Monad
 
@@ -548,7 +549,7 @@ myPP = defaultPP
                     _        -> pad x
         )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
-    , ppSort    = fmap (scratchpadFilterOutWorkspace.) $ ppSort defaultPP
+    , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
     }
 
 
@@ -562,8 +563,27 @@ onlyTitle pp = defaultPP { ppCurrent = const ""
                          , ppLayout  = ppLayout pp
                          , ppTitle   = ppTitle pp }
 
+-- taken from XMonad.Actions.TopicSpace and modified for respecting ppSort
+-- function
+mypprWindowSet :: TopicConfig -> PP -> X String
+mypprWindowSet tg pp = do
+    winset <- gets windowset
+    urgents <- readUrgents
+    sort' <- ppSort pp
+    let empty_workspaces = map W.tag $ filter (isNothing . W.stack) $ W.workspaces winset
+        maxDepth = maxTopicHistory tg
+    setLastFocusedTopic (W.tag . W.workspace . W.current $ winset)
+                        (`notElem` empty_workspaces)
+    lastWs <- getLastFocusedTopics
+    let depth topic = fromJust $ elemIndex topic (lastWs ++ [topic])
+        add_depth proj topic = proj pp . (((topic++":")++) . show) . depth $ topic
+        pp' = pp { ppHidden = add_depth ppHidden, ppVisible = add_depth ppVisible }
+        sortWindows = take maxDepth . sortBy (comparing $ depth . W.tag) . sort'
+    return $ DL.pprWindowSet sortWindows urgents pp' winset
+
+
 myDynamicLogString :: TopicConfig -> PP -> X String
-myDynamicLogString tc pp = mergePPOutputs [TS.pprWindowSet tc, dynamicLogString . onlyTitle] pp
+myDynamicLogString tc pp = mergePPOutputs [mypprWindowSet tc, dynamicLogString . onlyTitle] pp
 
 myDynamicLogWithPP :: TopicConfig -> PP -> X ()
 myDynamicLogWithPP tc pp = myDynamicLogString tc pp >>= io . ppOutput pp
