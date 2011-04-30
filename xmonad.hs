@@ -597,8 +597,7 @@ updateMyConfig conf tc ts = conf
 main = do
     tf  <- readTopicsFile myTopicFile
     ctf <- readTopicsFile myCodeTopicFile
-    let tc = myTopicConfig
-    let ts = zipTopics tc tf ++ zipTopics' tc "code" ctf
+    let ts = zipTopics myTopicConfig tf ++ zipTopics' myTopicConfig "code" ctf
     let tc = updateTopicConfig myTopicConfig ts
     let conf = updateMyConfig myConfig tc (myTopics ++ ts)
     din  <- spawnPipe (statusBarCmd ++ " -xs 1")
