@@ -212,14 +212,21 @@ topicActionMap ts = M.fromList $ map (\(TopicItem n _ a _) -> (n, a)) ts
 
 myDefaultTopicAction = return ()
 
-myTopicConfig = TopicConfig {
-      topicDirs    = topicDirMap myTopics
+myDefaultTopicConfig = TopicConfig
+    { topicDirs          = M.empty
+    , topicActions       = M.empty
     , defaultTopicAction = const $ myDefaultTopicAction
-    , defaultTopic = "admin"
-    , maxTopicHistory = 10
-    , topicActions = topicActionMap myTopics
+    , defaultTopic       = "admin"
+    , maxTopicHistory    = 10
     }
 
+updateTopicConfig :: TopicConfig -> [TopicItem] -> TopicConfig
+updateTopicConfig tc ts = tc
+    { topicDirs    = topicDirs    tc <+> (topicDirMap    ts)
+    , topicActions = topicActions tc <+> (topicActionMap ts)
+    }
+
+myTopicConfig = updateTopicConfig myDefaultTopicConfig myTopics
 
 -- external topic file
 -- format: multiple lines with name, dir and type each
@@ -570,10 +577,7 @@ main = do
     ctf <- readTopicsFile myCodeTopicFile
     let tc = myTopicConfig
     let ts = zipTopics tc tf ++ zipTopics' tc "code" ctf
-    let tc = myTopicConfig {
-      topicDirs    = topicDirs    myTopicConfig <+> (topicDirMap ts)
-    , topicActions = topicActions myTopicConfig <+> (topicActionMap ts)
-    }
+    let tc = updateTopicConfig myTopicConfig ts
     let ws = (workspaces myConfig) ++ (map topicName ts)
     checkTopicConfig ws tc
     din  <- spawnPipe (statusBarCmd ++ " -xs 1")
