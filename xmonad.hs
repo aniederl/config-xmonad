@@ -63,7 +63,6 @@ import Data.Ratio
 import Data.List
 import Data.Map (Map)
 import Data.Maybe
-import Data.Monoid ( mappend )
 
 import Control.Monad
 
@@ -553,7 +552,7 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          $ defaultConfig
          { borderWidth        = 2
          , terminal           = myTerminal
-         , startupHook        = ewmhDesktopsStartup +++ setWMName "LG3D"
+         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
          , handleEventHook    = ewmhDesktopsEventHook
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
@@ -565,7 +564,6 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          `additionalKeysP` multimediaKeys
          `removeMouseBindings` delButtons
          `additionalMouseBindings` insButtons
-         where x +++ y = mappend x y
 
 main = do
     tf  <- readTopicsFile myTopicFile
