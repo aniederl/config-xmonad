@@ -374,7 +374,7 @@ myLayoutHook ts = avoidStruts
 scratchpadWorkspaceTag = "NSP"
 
 delKeys = []
-insKeys =
+insKeys tc =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
     , ("M-w",               nextScreen)
@@ -415,8 +415,12 @@ insKeys =
 
     , ("C-M-l",             spawn "xscreensaver-command -lock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
-    --, ("M-S-p",             prompt (myTerminal ++ " -e") myShellXPConfig) -- no completion
-    , ("M-S-p",             spawn ("exe=`dmenu_path | dmenu -nb '#000000' -nf '#CCCCCC'` && eval \"exec " ++ myTerminal ++ " -e $exe\""))
+
+    -- spawn a terminal
+    , ("M-i",   spawnShell tc)
+
+    -- run prompt
+    , ("M-p",   spawnT' tc (dmenuPromptCmd myShellXPConfig))
 
     -- note taking
     , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
@@ -426,6 +430,10 @@ insKeys =
     , ("M-S-g",             workspacePrompt myShellXPConfig (windows . W.shift))
 
     , ("M-S-f",             gridselectWorkspace myGSConfig W.shift)
+
+    , ("M-o",               workspacePrompt myXPConfig (addTopic tc))
+    , ("M-g",               workspacePrompt myShellXPConfig (switchTopic tc))
+    , ("M-f",               gridselectTopic tc myGSConfig)
 
     , ("M-r",               renameWorkspace myXPConfig)
 
@@ -445,6 +453,14 @@ insKeys =
     -- screenshot
     , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
     ]
+    ++
+    -- switch or shift to Nth last focused workspace (history)
+    [("M" ++ m ++ ('-':k:[]) , f i)
+        | (i, k) <- zip [1..] ['1'..'9']
+        , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
+    ]
+
+
 
 multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
@@ -559,18 +575,24 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          $ defaultConfig
          { borderWidth        = 2
          , terminal           = myTerminal
-         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
-         , handleEventHook    = ewmhDesktopsEventHook
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
-         , workspaces         = myTopicNames
-         , manageHook         = myManageHook
+         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
+         , handleEventHook    = ewmhDesktopsEventHook
+         , logHook            = ewmhDesktopsLogHook
+                              >> updatePointer (Relative 1.0 1.0)
+         , manageHook         = manageSpawn <+> myManageHook
          }
          `removeKeysP` delKeys
-         `additionalKeysP` insKeys
          `additionalKeysP` multimediaKeys
          `removeMouseBindings` delButtons
          `additionalMouseBindings` insButtons
+
+updateMyConfig conf tc ts = conf
+                          { workspaces = map topicName ts
+                          , layoutHook = myLayoutHook  ts
+                          }
+                          `additionalKeysP` (insKeys tc)
 
 main = do
     tf  <- readTopicsFile myTopicFile
@@ -578,34 +600,12 @@ main = do
     let tc = myTopicConfig
     let ts = zipTopics tc tf ++ zipTopics' tc "code" ctf
     let tc = updateTopicConfig myTopicConfig ts
-    let ws = (workspaces myConfig) ++ (map topicName ts)
-    checkTopicConfig ws tc
+    let conf = updateMyConfig myConfig tc (myTopics ++ ts)
     din  <- spawnPipe (statusBarCmd ++ " -xs 1")
     din2 <- spawnPipe (statusBarCmd ++ " -xs 2")
-    xmonad $ myConfig
-        { logHook            =  ewmhDesktopsLogHook
+    xmonad $ conf
+        { logHook            = logHook conf
                              >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
                              >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din2 })
-                             >>  updatePointer (Relative 1.0 1.0)
-        , manageHook         = manageSpawn <+> myManageHook
-        , workspaces         = ws
-        , layoutHook         = myLayoutHook $ myTopics <+> ts
         }
-        `additionalKeysP` ( [
-              ("M-i",   spawnShell tc)
-            , ("M-o",   workspacePrompt myXPConfig (addTopic tc))
-            , ("M-g",   workspacePrompt myShellXPConfig (switchTopic tc))
-            , ("M-f",   gridselectTopic tc myGSConfig)
-
-            -- run prompt
-            , ("M-p",   spawnT' tc (dmenuPromptCmd myShellXPConfig))
-            ]
-            ++
-            -- switch or shift to Nth last focused workspace (history)
-            [("M" ++ m ++ ('-':k:[]) , f i)
-            | (i, k) <- zip [1..] ['1'..'9']
-            , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
-            ]
-
-       )
 
