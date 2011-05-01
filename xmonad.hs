@@ -573,7 +573,7 @@ myManageHook = composeAll $
 
 -- Dynamic Log -----------------------------------------------------------------
 
-myBitmapsDir = ".dzen/bitmaps/dzen"
+myBitmapsDir = ".xmonad/.dzen/bitmaps/dzen"
 
 myPP :: String -> PP
 myPP home = defaultPP
