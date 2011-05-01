@@ -172,10 +172,9 @@ myActionTopics' = [ ("admin", spawnScreenSession "main" >>  spawnT (myTerminal +
                   ]
 
 myActionTopics :: [(Topic, Dir, X ())]
-myActionTopics  = [ ("conf", "etc", codeTopicAction)
-                  ]
-                  ++
-                  map (\(n, a) -> (n, "", a)) myActionTopics'
+myActionTopics = map (\(n, a) -> (n, "", a)) myActionTopics'
+               ++ [ ("conf", "etc", codeTopicAction)
+                 ]
 
 myCodeTopics = [ ("xmonad", ".xmonad")
                , ("sweb",   "bs/sweb")
