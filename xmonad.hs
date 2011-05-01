@@ -75,24 +75,23 @@ import System.Directory
 import XMonad.StackSet (view, greedyView, tag, hidden, stack)
 
 
-myFont    :: String
-myBgColor :: String
-myFgColor :: String
+-- default configuration -------------------------------------------------------
 
 myFont = "xft:DejaVu Sans Mono"
 
 --myDzen2Font = "-xos4-terminus-*-*-*-*-14-*-*-*-*-*-*-*"
 myDzen2Font = myFont ++ ":size=12"
 
-myBgColor = "black"
-myFgColor = "blue"
-
-titleFontSize = ":size=8"
+titleFontSize  = ":size=8"
 promptFontSize = ":size=14"
 
 myTerminal = "urxvt"
 
 myHome = "/home/andi"
+
+
+myBgColor = "black"
+myFgColor = "blue"
 
 myTheme = defaultTheme
     { fontName = myFont ++ titleFontSize
@@ -121,22 +120,31 @@ myNoteXPConfig = myXPConfig
 myGSConfig = defaultGSConfig
     { gs_font = myFont }
 
-floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration DefaultShrinker)
-                      (ModifiedLayout MouseResize (ModifiedLayout WindowArranger SimpleFloat)) a
-floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
+myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
+         $ defaultConfig
+         { borderWidth        = 2
+         , terminal           = myTerminal
+         , normalBorderColor  = "#333333"
+         , focusedBorderColor = "#0000ff"
+         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
+         , handleEventHook    = ewmhDesktopsEventHook
+         , logHook            = ewmhDesktopsLogHook
+                              >> updatePointer (Relative 1.0 1.0)
+         , manageHook         = manageSpawn <+> myManageHook
+         }
+         `removeKeysP` delKeys
+         `additionalKeysP` multimediaKeys
+         `removeMouseBindings` delButtons
+         `additionalMouseBindings` insButtons
+
+updateMyConfig conf tc ts = conf
+                          { workspaces = map topicName ts
+                          , layoutHook = myLayoutHook  ts
+                          }
+                          `additionalKeysP` (insKeys tc)
 
 
-gvimSession tc session = spawnT' tc ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
-
-codeTopicAction' tc = spawnShell tc >> spawnT' tc "gvim"
-codeTopicAction = codeTopicAction' myTopicConfig
-
-codeTopicSession :: TopicConfig -> String -> (String, X () )
-codeTopicSession tc topic = (topic, codeTopicSession' tc topic)
-
-codeTopicSession' :: TopicConfig -> String -> X ()
-codeTopicSession' tc topic = spawnScreenSession' tc topic >> gvimSession tc topic
-
+-- Topics ----------------------------------------------------------------------
 
 data TopicType = Code
                | Other
@@ -147,19 +155,16 @@ data TopicItem = TopicItem { topicName   :: Topic
                            , topicType   :: TopicType
                            }
 
-topicItem :: Topic -> Dir -> X () -> TopicType -> TopicItem
-topicItem name dir action ttype = TopicItem name topicdir action ttype
-    where topicdir =
-              case dir of
-                   "" -> "${HOME}/"
-                   _  -> dir
 
-topicItem' :: Topic -> Dir -> X () -> TopicItem
-topicItem' name dir action = topicItem name dir action Other
+myDefaultTopicAction = return ()
 
-typedTopicItem :: TopicConfig -> Topic -> Dir -> String -> TopicItem
-typedTopicItem tc name dir ttype | ttype == "code" = topicItem  name dir (codeTopicSession' tc name) Code
-                                 | otherwise      = topicItem' name dir myDefaultTopicAction
+myDefaultTopicConfig = TopicConfig
+    { topicDirs          = M.empty
+    , topicActions       = M.empty
+    , defaultTopicAction = const $ myDefaultTopicAction
+    , defaultTopic       = "admin"
+    , maxTopicHistory    = 10
+    }
 
 
 -- actions
@@ -210,15 +215,6 @@ topicDirMap ts = M.fromList $ map (\(TopicItem n d _ _) -> (n, d)) ts
 topicActionMap :: [TopicItem] -> Map Topic (X ())
 topicActionMap ts = M.fromList $ map (\(TopicItem n _ a _) -> (n, a)) ts
 
-myDefaultTopicAction = return ()
-
-myDefaultTopicConfig = TopicConfig
-    { topicDirs          = M.empty
-    , topicActions       = M.empty
-    , defaultTopicAction = const $ myDefaultTopicAction
-    , defaultTopic       = "admin"
-    , maxTopicHistory    = 10
-    }
 
 updateTopicConfig :: TopicConfig -> [TopicItem] -> TopicConfig
 updateTopicConfig tc ts = tc
@@ -227,6 +223,22 @@ updateTopicConfig tc ts = tc
     }
 
 myTopicConfig = updateTopicConfig myDefaultTopicConfig myTopics
+
+
+topicItem :: Topic -> Dir -> X () -> TopicType -> TopicItem
+topicItem name dir action ttype = TopicItem name topicdir action ttype
+    where topicdir =
+              case dir of
+                   "" -> "${HOME}/"
+                   _  -> dir
+
+topicItem' :: Topic -> Dir -> X () -> TopicItem
+topicItem' name dir action = topicItem name dir action Other
+
+typedTopicItem :: TopicConfig -> Topic -> Dir -> String -> TopicItem
+typedTopicItem tc name dir ttype | ttype == "code" = topicItem  name dir (codeTopicSession' tc name) Code
+                                 | otherwise      = topicItem' name dir myDefaultTopicAction
+
 
 -- external topic file
 -- format: multiple lines with name, dir and type each
@@ -255,7 +267,8 @@ readTopicsFile' f = do
     l <- readFile f
     return $ l
 
--- topic helper functions from TopicSpace doc
+
+-- spawn functions
 spawnShell :: TopicConfig -> X ()
 spawnShell tc = currentTopicDir tc >>= spawnShellIn
 
@@ -263,64 +276,42 @@ spawnT' :: TopicConfig -> String -> X ()
 spawnT' tc program = currentTopicDir tc >>= spawnIn program
 spawnT program = spawnT' myTopicConfig program
 
+spawnIn :: String -> Dir -> X ()
+spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
+{-spawnIn program dir = spawn $ myTerminal ++ "'(cd " ++ dir ++ " && zsh )'"-}
+
+spawnShellIn :: Dir -> X ()
+spawnShellIn dir = spawnIn myTerminal dir
+
+
+-- session functions
 spawnScreenSession' :: TopicConfig -> String -> X ()
 spawnScreenSession' tc session = currentTopicDir tc >>= spawnScreenSessionIn session
 
 spawnScreenSession :: String -> X ()
 spawnScreenSession session = spawnScreenSession' myTopicConfig session
 
-spawnShellIn :: Dir -> X ()
-spawnShellIn dir = spawnIn myTerminal dir
-
 screenSession session = myTerminal ++  " -e screen -D -R " ++ session
 spawnScreenSessionIn :: String -> Dir -> X ()
 spawnScreenSessionIn session dir = spawnIn (screenSession session) dir
 
-spawnIn :: String -> Dir -> X ()
-spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
-{-spawnIn program dir = spawn $ myTerminal ++ "'(cd " ++ dir ++ " && zsh )'"-}
+gvimSession tc session = spawnT' tc ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
 
-dmenuArgs :: XPConfig -> String
-dmenuArgs c = ""
-            ++ " -fn \"" ++ font c ++ "\""
-            ++ " -nb \"" ++ bgColor c ++ "\""
-            ++ " -nf \"" ++ fgColor c ++ "\""
-            ++ " -sb \"" ++ bgHLight c ++ "\""
-            ++ " -sf \"" ++ fgHLight c ++ "\""
-            ++ text
-            ++ bottom
-    where
-        text = case defaultText c of
-                    "" -> ""
-                    _  -> " -p " ++ defaultText c
-        bottom = case position c of
-                      Bottom -> " -b"
-                      _      -> ""
+-- code topics
+codeTopicAction' tc = spawnShell tc >> spawnT' tc "gvim"
+codeTopicAction = codeTopicAction' myTopicConfig
 
-dmenuPromptCmd :: XPConfig -> String
-dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
-                    ++ dmenuArgs conf
-                    ++ "` && eval \"exec $exe\""
+codeTopicSession :: TopicConfig -> String -> (String, X () )
+codeTopicSession tc topic = (topic, codeTopicSession' tc topic)
 
-addTopic :: TopicConfig -> String -> X ()
-addTopic tc newtag = addHiddenTopic newtag >> switchTopic tc newtag
-
-addHiddenTopic :: String -> X ()
-addHiddenTopic newtag = addHiddenWorkspace newtag
-
--- copy to nth last focused topic
--- adapted from shiftNthLastFocused
-copyNthLastFocused :: Int -> X ()
-copyNthLastFocused n = do
-    ws <- fmap (listToMaybe . drop n) getLastFocusedTopics
-    whenJust ws $ windows . copy
+codeTopicSession' :: TopicConfig -> String -> X ()
+codeTopicSession' tc topic = spawnScreenSession' tc topic >> gvimSession tc topic
 
 
-gridselectTopic :: TopicConfig -> GSConfig WorkspaceId -> X ()
-gridselectTopic tc conf = withWindowSet $ \ws -> do
-    let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
-    gridselect conf (zip wss wss) >>= flip whenJust (switchTopic tc)
-
+-- Layouts ---------------------------------------------------------------------
+floatSimple :: (Show a, Eq a) => ModifiedLayout (Decoration DefaultDecoration DefaultShrinker)
+                      (ModifiedLayout MouseResize (ModifiedLayout WindowArranger SimpleFloat)) a
+floatSimple = decoration shrinkText myTheme DefaultDecoration (mouseResize $ windowArrangeAll $ SF 20)
 
 tiledModifiers a = layoutHints
                  $ mkToggle1 NBFULL
@@ -373,20 +364,7 @@ myLayoutHook ts = avoidStruts
         codeWS = [ topicName t | t <- ts, topicType t == Code ]
 
 
-scratchpadWorkspaceTag = "NSP"
-
-myToggleWS :: X ()
-myToggleWS = windows $ view =<< tag . head . scratchpadFilterOutWorkspace . hidden
-
-myCycleRecentWS = myRecentWS W.view
-myShiftRecentWS = myRecentWS shiftView'
-    where shiftView' id ws = W.view id $ W.shift id ws
-
-myRecentWS f = cycleWindowSets options
-    where
-        options w = map (f `flip` w) (recentTags w)
-        recentTags w = map tag $ tail (myWS w) ++ [head (myWS w)]
-        myWS w = scratchpadFilterOutWorkspace $ W.workspaces w
+-- Key Bindings ----------------------------------------------------------------
 
 delKeys = []
 insKeys tc =
@@ -468,8 +446,6 @@ insKeys tc =
         , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
     ]
 
-
-
 multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
         , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
@@ -487,6 +463,66 @@ myGestures = M.fromList
         [ ( [],                 focus)
         , ([R, D, L, U],        \w -> spawn "xscreensaver-command -lock")
         ]
+
+myToggleWS :: X ()
+myToggleWS = windows $ view =<< tag . head . scratchpadFilterOutWorkspace . hidden
+
+myCycleRecentWS = myRecentWS W.view
+myShiftRecentWS = myRecentWS shiftView'
+    where shiftView' id ws = W.view id $ W.shift id ws
+
+myRecentWS f = cycleWindowSets options
+    where
+        options w = map (f `flip` w) (recentTags w)
+        recentTags w = map tag $ tail (myWS w) ++ [head (myWS w)]
+        myWS w = scratchpadFilterOutWorkspace $ W.workspaces w
+
+
+addTopic :: TopicConfig -> String -> X ()
+addTopic tc newtag = addHiddenTopic newtag >> switchTopic tc newtag
+
+addHiddenTopic :: String -> X ()
+addHiddenTopic newtag = addHiddenWorkspace newtag
+
+-- copy to nth last focused topic
+-- adapted from shiftNthLastFocused
+copyNthLastFocused :: Int -> X ()
+copyNthLastFocused n = do
+    ws <- fmap (listToMaybe . drop n) getLastFocusedTopics
+    whenJust ws $ windows . copy
+
+
+gridselectTopic :: TopicConfig -> GSConfig WorkspaceId -> X ()
+gridselectTopic tc conf = withWindowSet $ \ws -> do
+    let wss = map W.tag $ W.hidden ws ++ map W.workspace (W.current ws : W.visible ws)
+    gridselect conf (zip wss wss) >>= flip whenJust (switchTopic tc)
+
+
+-- dmenu prompt
+dmenuArgs :: XPConfig -> String
+dmenuArgs c = ""
+            ++ " -fn \"" ++ font c ++ "\""
+            ++ " -nb \"" ++ bgColor c ++ "\""
+            ++ " -nf \"" ++ fgColor c ++ "\""
+            ++ " -sb \"" ++ bgHLight c ++ "\""
+            ++ " -sf \"" ++ fgHLight c ++ "\""
+            ++ text
+            ++ bottom
+    where
+        text = case defaultText c of
+                    "" -> ""
+                    _  -> " -p " ++ defaultText c
+        bottom = case position c of
+                      Bottom -> " -b"
+                      _      -> ""
+
+dmenuPromptCmd :: XPConfig -> String
+dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
+                    ++ dmenuArgs conf
+                    ++ "` && eval \"exec $exe\""
+
+
+-- Manage Hook -----------------------------------------------------------------
 
 myManageHook = composeAll $
              [ composeOne [ isFullscreen -?> doFullFloat   ] ]
@@ -535,6 +571,8 @@ myManageHook = composeAll $
           mySinkRoles = [ "gimp-toolbox", "gimp-image-window" ]
           role = stringProperty "WM_WINDOW_ROLE"
 
+
+-- Dynamic Log -----------------------------------------------------------------
 
 myBitmapsDir = "/home/andi/.dzen/bitmaps/dzen"
 myPP :: PP
@@ -594,6 +632,8 @@ myDynamicLogWithPP :: TopicConfig -> PP -> X ()
 myDynamicLogWithPP tc pp = myDynamicLogString tc pp >>= io . ppOutput pp
 
 
+-- main ------------------------------------------------------------------------
+
 statusBarCmd = "dzen2"
              ++ " -bg '#000000'"
              ++ " -fg '#FFFFFF'"
@@ -609,29 +649,6 @@ logBarCmd = "inotail -f -n 30"
           ++ " -h 16 -fn \"" ++ myDzen2Font ++ "\""
           ++ " -sa c -e '' -ta l"
           ++ " -x 800 -w 480"
-
-myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
-         $ defaultConfig
-         { borderWidth        = 2
-         , terminal           = myTerminal
-         , normalBorderColor  = "#333333"
-         , focusedBorderColor = "#0000ff"
-         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
-         , handleEventHook    = ewmhDesktopsEventHook
-         , logHook            = ewmhDesktopsLogHook
-                              >> updatePointer (Relative 1.0 1.0)
-         , manageHook         = manageSpawn <+> myManageHook
-         }
-         `removeKeysP` delKeys
-         `additionalKeysP` multimediaKeys
-         `removeMouseBindings` delButtons
-         `additionalMouseBindings` insButtons
-
-updateMyConfig conf tc ts = conf
-                          { workspaces = map topicName ts
-                          , layoutHook = myLayoutHook  ts
-                          }
-                          `additionalKeysP` (insKeys tc)
 
 main = do
     tf   <- readTopicsFile myTopicFile
