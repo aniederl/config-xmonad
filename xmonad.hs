@@ -71,6 +71,7 @@ import Text.Regex.Posix
 
 import System.Exit
 import System.Directory
+import System.Environment
 
 import XMonad.StackSet (view, greedyView, tag, hidden, stack)
 
@@ -86,8 +87,6 @@ titleFontSize  = ":size=8"
 promptFontSize = ":size=14"
 
 myTerminal = "urxvt"
-
-myHome = "/home/andi"
 
 
 myBgColor = "black"
@@ -137,11 +136,11 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          `removeMouseBindings` delButtons
          `additionalMouseBindings` insButtons
 
-updateMyConfig conf tc ts = conf
-                          { workspaces = map topicName ts
-                          , layoutHook = myLayoutHook  ts
-                          }
-                          `additionalKeysP` (insKeys tc)
+updateMyConfig conf home tc ts = conf
+    { workspaces = map topicName ts
+    , layoutHook = myLayoutHook  ts
+    }
+    `additionalKeysP` (insKeys home tc)
 
 
 -- Topics ----------------------------------------------------------------------
@@ -246,8 +245,8 @@ typedTopicItem tc name dir ttype | ttype == "code" = topicItem  name dir (codeTo
 --   topic2 topicdir2
 --   topic3 topicdir3 code
 --   ...
-myTopicFile     = myHome ++ "/.xmonad/topics"
-myCodeTopicFile = myHome ++ "/.xmonad/code-topics"
+myTopicFile     = ".xmonad/topics"
+myCodeTopicFile = ".xmonad/code-topics"
 
 zipTopics' :: TopicConfig -> String -> String -> [TopicItem]
 zipTopics' tc dc s = (map myZip) ( (map words) (lines s) )
@@ -367,7 +366,7 @@ myLayoutHook ts = avoidStruts
 -- Key Bindings ----------------------------------------------------------------
 
 delKeys = []
-insKeys tc =
+insKeys home tc =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
     , ("M-w",               nextScreen)
@@ -409,7 +408,7 @@ insKeys tc =
     , ("M-p",               spawnT' tc (dmenuPromptCmd myShellXPConfig))
 
     -- note taking
-    , ("M-n",               appendFilePrompt myNoteXPConfig (myHome ++ "/.notes"))
+    , ("M-n",               appendFilePrompt myNoteXPConfig (home ++ "/.notes"))
 
     -- workspace/topic prompt
     , ("M-S-o",             workspacePrompt myXPConfig (addHiddenTopic))
@@ -574,9 +573,10 @@ myManageHook = composeAll $
 
 -- Dynamic Log -----------------------------------------------------------------
 
-myBitmapsDir = "/home/andi/.dzen/bitmaps/dzen"
-myPP :: PP
-myPP = defaultPP
+myBitmapsDir = ".dzen/bitmaps/dzen"
+
+myPP :: String -> PP
+myPP home = defaultPP
     { ppCurrent = wrap ("^fg(#FFFFFF)^bg(#647A90)^p(2)^i(" ++ myBitmapsDir ++ "/has_win.xbm)") "^p(2)^fg(grey55)^bg()"
     , ppVisible = wrap ("^bg(grey30)^fg(grey75)^p(2)") "^p(2)^fg(grey55)^bg()"
     , ppSep     = " ^fg(grey60)^r(3x3)^fg() "
@@ -584,16 +584,18 @@ myPP = defaultPP
     , ppUrgent  = wrap (dzenColor "#FF0000" "" "{") (dzenColor "#FF0000" "" "}") . pad
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
-                    "tall"   ->   "tall ^i(" ++ myBitmapsDir ++ "/tall.xbm)"
-                    "mirror" -> "mirror ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "code"   ->   "code ^i(" ++ myBitmapsDir ++ "/mtall.xbm)"
-                    "full"   ->   "full ^i(" ++ myBitmapsDir ++ "/full.xbm)"
+                    "tall"   ->   "tall ^i(" ++ bitmapsDir ++ "/tall.xbm)"
+                    "mirror" -> "mirror ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
+                    "code"   ->   "code ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
+                    "full"   ->   "full ^i(" ++ bitmapsDir ++ "/full.xbm)"
                     "Grid"   -> "grid"
                     _        -> pad x
         )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
     , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
     }
+    where
+        bitmapsDir = home ++ "/" ++ myBitmapsDir
 
 
 mergePPOutputs :: [PP -> X String] -> PP -> X String
@@ -651,17 +653,18 @@ logBarCmd = "inotail -f -n 30"
           ++ " -x 800 -w 480"
 
 main = do
-    tf   <- readTopicsFile myTopicFile
-    ctf  <- readTopicsFile myCodeTopicFile
+    home <- getEnv "HOME"
+    tf   <- readTopicsFile $ home ++ "/" ++ myTopicFile
+    ctf  <- readTopicsFile $ home ++ "/" ++ myCodeTopicFile
     din  <- spawnPipe $ statusBarCmd ++ " -xs 1"
     din2 <- spawnPipe $ statusBarCmd ++ " -xs 2"
     let ts   = zipTopics  myTopicConfig tf
              ++ zipTopics' myTopicConfig "code" ctf
     let tc   = updateTopicConfig myTopicConfig ts
-    let conf = updateMyConfig myConfig tc $ myTopics ++ ts
+    let conf = updateMyConfig myConfig home tc $ myTopics ++ ts
     xmonad $ conf
         { logHook            = logHook conf
-                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din })
-                             >> (myDynamicLogWithPP tc $ myPP { ppOutput = hPutStrLn din2 })
+                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din })
+                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din2 })
         }
 
