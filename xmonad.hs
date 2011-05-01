@@ -379,9 +379,13 @@ scratchpadWorkspaceTag = "NSP"
 myToggleWS :: X ()
 myToggleWS = windows $ view =<< tag . head . scratchpadFilterOutWorkspace . hidden
 
-myCycleRecentWS = cycleWindowSets options
+myCycleRecentWS = myRecentWS W.view
+myShiftRecentWS = myRecentWS shiftView'
+    where shiftView' id ws = W.view id $ W.shift id ws
+
+myRecentWS f = cycleWindowSets options
     where
-        options w = map (W.view `flip` w) (recentTags w)
+        options w = map (f `flip` w) (recentTags w)
         recentTags w = map tag $ tail (myWS w) ++ [head (myWS w)]
         myWS w = scratchpadFilterOutWorkspace $ W.workspaces w
 
@@ -392,14 +396,12 @@ insKeys tc =
     , ("M-w",               nextScreen)
     , ("M-e",               swapNextScreen)
     , ("M-d",               shiftNextScreen)
-    , ("M-S-h",             shiftToPrev)
-    , ("M-S-l",             shiftToNext)
-    , ("M-C-S-h",           shiftToPrev >> prevWS)
-    , ("M-C-S-l",           shiftToNext >> nextWS)
 
     -- cycle through recent workspaces
     , ("M-h",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
     , ("M-l",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
+    , ("M-S-h",             myShiftRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
+    , ("M-S-l",             myShiftRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
 
     -- resize master pane
     , ("M-z",               sendMessage Shrink)
