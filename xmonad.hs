@@ -584,11 +584,13 @@ myPP home = defaultPP
     , ppUrgent  = wrap (dzenColor "#FF0000" "" "{") (dzenColor "#FF0000" "" "}") . pad
     , ppLayout  = dzenColor "#647A90" "" .
         (\x -> case x of
-                    "tall"   ->   "tall ^i(" ++ bitmapsDir ++ "/tall.xbm)"
-                    "mirror" -> "mirror ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
-                    "code"   ->   "code ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
-                    "full"   ->   "full ^i(" ++ bitmapsDir ++ "/full.xbm)"
-                    "Grid"   -> "grid"
+                    "tall"   ->   "Tall ^i(" ++ bitmapsDir ++ "/tall.xbm)"
+                    "mirror" -> "Mirror ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
+                    "code"   ->   "Code ^i(" ++ bitmapsDir ++ "/mtall.xbm)"
+                    "Full"   ->   "Full ^i(" ++ bitmapsDir ++ "/full.xbm)"
+                    "Grid"   ->   "Grid ^i(" ++ bitmapsDir ++ "/grid.xbm)"
+                    "IM"     ->     "IM ^i(" ++ bitmapsDir ++ "/im.xbm)"
+                    "gimp"   ->   "Gimp ^i(" ++ bitmapsDir ++ "/gimp.xbm)"
                     _        -> pad x
         )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
