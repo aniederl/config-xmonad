@@ -379,6 +379,12 @@ scratchpadWorkspaceTag = "NSP"
 myToggleWS :: X ()
 myToggleWS = windows $ view =<< tag . head . scratchpadFilterOutWorkspace . hidden
 
+myCycleRecentWS = cycleWindowSets options
+    where
+        options w = map (W.view `flip` w) (recentTags w)
+        recentTags w = map tag $ tail (myWS w) ++ [head (myWS w)]
+        myWS w = scratchpadFilterOutWorkspace $ W.workspaces w
+
 delKeys = []
 insKeys tc =
     [ ("M-<Return>",        promote)
@@ -386,19 +392,14 @@ insKeys tc =
     , ("M-w",               nextScreen)
     , ("M-e",               swapNextScreen)
     , ("M-d",               shiftNextScreen)
-    , ("M-h",               moveTo Prev (WSIs $ do ne <- return (isJust . stack)
-                                                   ns <- return ((scratchpadWorkspaceTag /=) . tag)
-                                                   return (\w -> ne w && ns w)))
-    , ("M-l",               moveTo Next (WSIs $ do ne <- return (isJust . stack)
-                                                   ns <- return ((scratchpadWorkspaceTag /=) . tag)
-                                                   return (\w -> ne w && ns w)))
     , ("M-S-h",             shiftToPrev)
     , ("M-S-l",             shiftToNext)
     , ("M-C-S-h",           shiftToPrev >> prevWS)
     , ("M-C-S-l",           shiftToNext >> nextWS)
 
-    -- cycle throug recent workspaces with alt-tab
-    , ("M-<Tab>",           cycleRecentWS [xK_Alt_L] xK_Tab xK_grave)
+    -- cycle through recent workspaces
+    , ("M-h",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
+    , ("M-l",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
 
     -- resize master pane
     , ("M-z",               sendMessage Shrink)
