@@ -430,10 +430,10 @@ insKeys home tc =
 
     --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
-    , ("M-C-<Home>",        spawn "mpc toggle")
-    , ("M-C-<End>",         spawn "mpc stop")
-    , ("M-C-<Page_Up>",     spawn "mpc prev")
-    , ("M-C-<Page_Down>",   spawn "mpc next")
+    , ("M-C-<Home>",        spawn "xmpc toggle")
+    , ("M-C-<End>",         spawn "xmpc stop")
+    , ("M-C-<Page_Up>",     spawn "xmpc prev")
+    , ("M-C-<Page_Down>",   spawn "xmpc next")
 
     -- screenshot
     , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
@@ -449,10 +449,10 @@ multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
         , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
         , ("<XF86AudioRaiseVolume>", unsafeSpawn "notify-vol up")
-        , ("<XF86AudioPlay>",        spawn "mpc toggle")
-        , ("<XF86AudioStop>",        spawn "mpc stop")
-        , ("<XF86AudioPrev>",        spawn "mpc prev")
-        , ("<XF86AudioNext>",        spawn "mpc next")
+        , ("<XF86AudioPlay>",        spawn "xmpc toggle")
+        , ("<XF86AudioStop>",        spawn "xmpc stop")
+        , ("<XF86AudioPrev>",        spawn "xmpc prev")
+        , ("<XF86AudioNext>",        spawn "xmpc next")
         ]
 
 delButtons = []
