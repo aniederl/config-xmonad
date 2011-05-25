@@ -32,7 +32,7 @@ import XMonad.Hooks.ManageHelpers
 import XMonad.Hooks.EwmhDesktops
 
 import XMonad.Layout.LayoutHints
-import XMonad.Layout.NoBorders (smartBorders)
+import XMonad.Layout.NoBorders (smartBorders, noBorders)
 import XMonad.Layout.PerWorkspace (onWorkspace, onWorkspaces)
 import XMonad.Layout.SimpleFloat
 import XMonad.Layout.WindowArranger
@@ -49,6 +49,8 @@ import XMonad.Layout.Tabbed
 import XMonad.Layout.IM
 import XMonad.Layout.Grid
 import XMonad.Layout.TrackFloating
+import XMonad.Layout.MagicFocus
+import XMonad.Layout.Circle
 
 import XMonad.Prompt
 import XMonad.Prompt.Shell
@@ -326,10 +328,10 @@ halfTiled   = tiled $ 1/2
 tiledMirror = named "mirror" $ Mirror $ tiled $ 1/2
 codeMirror  = named "code"   $ Mirror $ tiled $ 4/5
 
-layoutTerm = halfTiled  ||| tiledMirror ||| Full
-layoutCode = codeMirror ||| halfTiled   ||| Full
+layoutTerm = halfTiled  ||| tiledMirror ||| Full ||| magicFocus(noBorders Circle)
+layoutCode = codeMirror ||| halfTiled   ||| Full ||| magicFocus(noBorders Circle)
 
-defaultLayouts = Full   ||| halfTiled   ||| tiledMirror
+defaultLayouts = Full   ||| halfTiled   ||| tiledMirror ||| Circle
 
 layoutGimp = named "gimp"
            $ combineTwoP (TwoPane 0.85 0.15) Full
