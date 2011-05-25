@@ -195,7 +195,7 @@ myOtherTopics = [ "com"
 
 
 myTopics :: [TopicItem]
-myTopics = map topicItem'' myActionTopics
+myTopics = map topicItem''    myActionTopics
            ++
            map codeTopicItem  myCodeTopics
            ++
@@ -654,16 +654,17 @@ logBarCmd = "inotail -f -n 30"
           ++ " -sa c -e '' -ta l"
           ++ " -x 800 -w 480"
 
+
+fileTopicList tc tf1 tf2 = zipTopics tc tf1 ++ zipTopics' tc "code" tf2
+
 main = do
     home <- getEnv "HOME"
     tf   <- readTopicsFile $ home ++ "/" ++ myTopicFile
     ctf  <- readTopicsFile $ home ++ "/" ++ myCodeTopicFile
     din  <- spawnPipe $ statusBarCmd ++ " -xs 1"
     din2 <- spawnPipe $ statusBarCmd ++ " -xs 2"
-    let ts   = zipTopics  myTopicConfig tf
-             ++ zipTopics' myTopicConfig "code" ctf
-    let tc   = updateTopicConfig myTopicConfig ts
-    let conf = updateMyConfig myConfig home tc $ myTopics ++ ts
+    let tc   = updateTopicConfig myTopicConfig $ fileTopicList tc tf ctf
+    let conf = updateMyConfig myConfig home tc $ myTopics ++ fileTopicList tc tf ctf
     xmonad $ conf
         { logHook            = logHook conf
                              >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din })
