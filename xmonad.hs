@@ -171,7 +171,7 @@ myDefaultTopicConfig = TopicConfig
 -- actions
 myActionTopics' :: [(Topic, X ())]
 myActionTopics' = [ ("admin", spawnScreenSession "main" >>  spawnT (myTerminal ++ " -e su -l -c 'screen -D -R main'"))
-                  , ("music", spawn "ario")
+                  , ("music", spawn "clementine")
                   , ("gimp",  spawn "gimp")
                   , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
                   , ("im",    spawn "pidgin")
@@ -359,6 +359,7 @@ myLayoutHook ts = avoidStruts
                 $ onWorkspace "admin" layoutTerm
                 $ onWorkspace "gimp"  layoutGimp
                 $ onWorkspace "im"    layoutPidgin
+                $ onWorkspace "conf"  layoutCode
                 $ onWorkspaces codeWS layoutCode
                 $ defaultLayouts
     where
@@ -380,6 +381,8 @@ insKeys home tc =
     , ("M-l",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
     , ("M-S-h",             myShiftRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
     , ("M-S-l",             myShiftRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
+    , ("M-<Tab>",           myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
+    , ("M-`",               myCycleRecentWS [xK_Alt_L, xK_Alt_R] xK_l xK_h)
 
     -- resize master pane
     , ("M-z",               sendMessage Shrink)
@@ -451,6 +454,7 @@ multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
         , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
         , ("<XF86AudioRaiseVolume>", unsafeSpawn "notify-vol up")
+        , ("<XF86TouchpadToggle>",   unsafeSpawn "notify-touchpad-toggle")
         , ("<XF86AudioPlay>",        spawn "xmpc toggle")
         , ("<XF86AudioStop>",        spawn "xmpc stop")
         , ("<XF86AudioPrev>",        spawn "xmpc prev")
@@ -477,6 +481,11 @@ myRecentWS f = cycleWindowSets options
         options w = map (f `flip` w) (recentTags w)
         recentTags w = map tag $ tail (myWS w) ++ [head (myWS w)]
         myWS w = scratchpadFilterOutWorkspace $ W.workspaces w
+
+
+--cycleRecentWS' = cycleWindowSets options
+--  where options w = map (W.view `flip` w) (recentTags w)
+--        recentTags w = map W.tag $ W.hidden w ++ [W.workspace (W.current w)]
 
 
 addTopic :: TopicConfig -> String -> X ()
