@@ -403,7 +403,8 @@ insKeys home tc =
     -- close only focused copy (kill if last)
     , ("M-S-c",             kill1)
 
-    , ("C-M-l",             spawn "xscreensaver-command -lock")
+    --, ("C-M-l",             spawn "xscreensaver-command -lock")
+    , ("C-M-l",             spawn "slock")
     , ("M-c",               withFocused (sendMessage . maximizeRestore))
 
     -- spawn a terminal
