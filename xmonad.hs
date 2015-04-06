@@ -442,6 +442,16 @@ insKeys home tc =
 
     -- screenshot
     , ("<Print>",           unsafeSpawn "scrot '%Y-%m-%d-%H%M_$wx$h.png' -e 'mv $f ~/shots/'")
+
+    -- audacious
+    --, ("<F-12>",            spawn "audtool playback-seek-relative -1 playback-pause")
+    --, ("<F-11>",            spawn "audtool playback-seek-relative +3")
+    --, ("<F-10>",            spawn "audtool playback-seek-relative -3")
+
+    -- cmus
+    , ("<F-12>",            spawn "cmus-remote -C \'seek -1\' \'player-pause\'")
+    , ("<F-11>",            spawn "cmus-remote -C \'seek +3\'")
+    , ("<F-10>",            spawn "cmus-remote -C \'seek -3\'")
     ]
     ++
     -- switch or shift to Nth last focused workspace (history)
