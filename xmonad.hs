@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 -- {-# OPTIONS_GHC -cpp #-}
 -- {-
 -- #include <X11/XF86keysym.h>
@@ -94,11 +96,11 @@ myTerminal = "urxvt"
 myBgColor = "black"
 myFgColor = "blue"
 
-myTheme = defaultTheme
+myTheme = XMonad.Layout.Tabbed.def
     { fontName = myFont ++ titleFontSize
     }
 
-myXPConfig = defaultXPConfig
+myXPConfig = XMonad.Prompt.def
     { font              = myFont ++ promptFontSize
     , bgColor           = myBgColor
     , fgColor           = myFgColor
@@ -118,19 +120,19 @@ myShellXPConfig = myXPConfig
 myNoteXPConfig = myXPConfig
     { position = Bottom }
 
-myGSConfig = defaultGSConfig
+myGSConfig = XMonad.Actions.GridSelect.def
     { gs_font = myFont }
 
 myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
-         $ defaultConfig
+         $ XMonad.def
          { borderWidth        = 2
          , terminal           = myTerminal
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
          , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
-         , handleEventHook    = ewmhDesktopsEventHook
+         , handleEventHook    = ewmhDesktopsEventHook <+> fullscreenEventHook
          , logHook            = ewmhDesktopsLogHook
-                              >> updatePointer (Relative 1.0 1.0)
+                              >> updatePointer (1.0, 1.0) (1, 1) -- (Relative 1.0 1.0)
          , manageHook         = manageSpawn <+> myManageHook
          }
          `removeKeysP` delKeys
@@ -457,6 +459,7 @@ insKeys home tc =
     ++
     -- switch or shift to Nth last focused workspace (history)
     [("M" ++ m ++ ('-':k:[]) , f i)
+        -- | (i, k) <- zip [1..] ["<F-1>", "<F-2>", "<F-3>", "<F-4>", "<F-5>", "<F-6>", "<F-7>","<F-8>", "<F-9>"]
         | (i, k) <- zip [1..] ['1'..'9']
         , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
     ]
@@ -466,6 +469,8 @@ multimediaKeys =
         , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
         , ("<XF86AudioRaiseVolume>", unsafeSpawn "notify-vol up")
         , ("<XF86TouchpadToggle>",   unsafeSpawn "notify-touchpad-toggle")
+        , ("<XF86MonBrightnessDown>", unsafeSpawn "notify-bright down")
+        , ("<XF86MonBrightnessUp>",   unsafeSpawn "notify-bright up")
         , ("<XF86AudioPlay>",        spawn "xmpc toggle")
         , ("<XF86AudioStop>",        spawn "xmpc stop")
         , ("<XF86AudioPrev>",        spawn "xmpc prev")
@@ -573,7 +578,7 @@ myManageHook = composeAll $
           moveToT t w = title     =? t --> doF (W.shift t)
           floatC  c   = className =? c --> doFloat
           unfloat     = ask >>= doF . W.sink
-          myClassFloats = [ "Xmessage", "feh", "Display", "MPlayer", "Kdiff3", "Audacious" ] --"MPlayer",
+          myClassFloats = [ "Xmessage", "feh", "Display", "MPlayer", "mpv", "Kdiff3", "Audacious" ] --"MPlayer",
           myTitleFloats = [ "Downloads", "Firefox Preferences", "Thunderbird Preferences", "Save As...",
                             "Preferences...", "Confirm...", "Connect via URL", "Enter Password", "Password Required", "Transfer Files", "Rename",
                             "Make Directory", "Delete Files/Directories", "Getting directory listings", "Options", "Chmod", "Add Bookmark",
@@ -597,8 +602,10 @@ myManageHook = composeAll $
 
 myBitmapsDir = ".xmonad/.dzen/bitmaps/dzen"
 
+myDefaultPP = DL.def
+
 myPP :: String -> PP
-myPP home = defaultPP
+myPP home = myDefaultPP
     { ppCurrent = wrap ("^fg(#FFFFFF)^bg(#647A90)^p(2)^i(" ++ myBitmapsDir ++ "/has_win.xbm)") "^p(2)^fg(grey55)^bg()"
     , ppVisible = wrap ("^bg(grey30)^fg(grey75)^p(2)") "^p(2)^fg(grey55)^bg()"
     , ppSep     = " ^fg(grey60)^r(3x3)^fg() "
@@ -616,7 +623,7 @@ myPP home = defaultPP
                     _        -> pad x
         )
     , ppTitle   = dzenColor "white" "" . dzenEscape . wrap "< " " >" -- . shorten 50
-    , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort defaultPP
+    , ppSort    = fmap (.scratchpadFilterOutWorkspace) $ ppSort myDefaultPP
     }
     where
         bitmapsDir = home ++ "/" ++ myBitmapsDir
@@ -626,11 +633,11 @@ mergePPOutputs :: [PP -> X String] -> PP -> X String
 mergePPOutputs x pp = fmap (intercalate (ppSep pp)) . sequence . sequence x $ pp
 
 onlyTitle :: PP -> PP
-onlyTitle pp = defaultPP { ppCurrent = const ""
-                         , ppHidden  = const ""
-                         , ppVisible = const ""
-                         , ppLayout  = ppLayout pp
-                         , ppTitle   = ppTitle pp }
+onlyTitle pp = myDefaultPP { ppCurrent = const ""
+                           , ppHidden  = const ""
+                           , ppVisible = const ""
+                           , ppLayout  = ppLayout pp
+                           , ppTitle   = ppTitle pp }
 
 -- taken from XMonad.Actions.TopicSpace and modified for respecting ppSort
 -- function
