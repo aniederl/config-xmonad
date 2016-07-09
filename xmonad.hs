@@ -176,7 +176,8 @@ myActionTopics' = [ ("admin", spawnScreenSession "main" >>  spawnT (myTerminal +
                   , ("music", spawn "clementine")
                   , ("gimp",  spawn "gimp")
                   , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
-                  , ("im",    spawn "pidgin")
+                  , ("im",    spawn "skype")
+                  , ("skype", spawn "skype")
                   ]
 
 myActionTopics :: [(Topic, Dir, X ())]
@@ -346,13 +347,23 @@ layoutGimp = named "gimp"
 
 layoutPidgin = named "IM"
              $ reflectHoriz
-             $ withIM size roster
+             $ withIM ratio roster
 --             $ reflectHoriz
              $ layout
     where
         layout = Grid
-        size   = 1%5
-        roster = Title "Buddy List"
+        ratio  = 1%5
+        roster = (ClassName "Pidgin") `And` (Role "buddy_list")
+
+layoutSkype = named "skype"
+             $ reflectHoriz
+             $ withIM ratio roster
+--             $ reflectHoriz
+             $ layout
+    where
+        layout = Grid
+        ratio  = 1%5
+        roster  = (ClassName "Skype") `And` (Not (Title "Options")) `And` (Not (Role "Chats")) `And` (Not (Role "CallWindowForm"))
 
 -- needs list of code topics as argument
 myLayoutHook ts = avoidStruts
@@ -361,6 +372,7 @@ myLayoutHook ts = avoidStruts
                 $ onWorkspace "admin" layoutTerm
                 $ onWorkspace "gimp"  layoutGimp
                 $ onWorkspace "im"    layoutPidgin
+                $ onWorkspace "skype" layoutSkype
                 $ onWorkspace "conf"  layoutCode
                 $ onWorkspaces codeWS layoutCode
                 $ defaultLayouts
@@ -593,6 +605,7 @@ myManageHook = composeAll $
                    ++ zip ["Amarokapp", "amarokapp", "Ario" ] (repeat "music")
                    ++ [ ("Gitk", "gitk") ]
                    ++ zip [ "Pidgin" ] (repeat "im")
+                   ++ zip [ "Skype" ] (repeat "skype")
           myTerminalShifts = zip ["newsbeuter", "slrn", "mutt", "centerim"] (repeat "com")
           mySinkRoles = [ "gimp-toolbox", "gimp-image-window" ]
           role = stringProperty "WM_WINDOW_ROLE"
