@@ -10,6 +10,7 @@ import XMonad
 import qualified Data.Map as M
 import qualified XMonad.StackSet as W
 
+import qualified XMonad.Actions.FlexibleManipulate as Flex
 
 import XMonad.Actions.Promote
 import XMonad.Actions.CycleWS
@@ -124,7 +125,7 @@ myGSConfig = XMonad.Actions.GridSelect.def
     { gs_font = myFont }
 
 myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused }
-         $ XMonad.def
+         $ docks $ XMonad.def
          { borderWidth        = 2
          , terminal           = myTerminal
          , normalBorderColor  = "#333333"
@@ -172,7 +173,7 @@ myDefaultTopicConfig = TopicConfig
 
 -- actions
 myActionTopics' :: [(Topic, X ())]
-myActionTopics' = [ ("admin", spawnScreenSession "main" >>  spawnT (myTerminal ++ " -e su -l -c 'screen -D -R main'"))
+myActionTopics' = [ ("admin", spawnTmuxSession "main" >>  spawnT (myTerminal ++ " -e sudo tmuxinator admin"))
                   , ("music", spawn "clementine")
                   , ("gimp",  spawn "gimp")
                   , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
@@ -295,11 +296,30 @@ spawnScreenSession' tc session = currentTopicDir tc >>= spawnScreenSessionIn ses
 spawnScreenSession :: String -> X ()
 spawnScreenSession session = spawnScreenSession' myTopicConfig session
 
-screenSession session = myTerminal ++  " -e screen -D -R " ++ session
+screenSession session = myTerminal ++ " -e screen -D -R " ++ session
 spawnScreenSessionIn :: String -> Dir -> X ()
 spawnScreenSessionIn session dir = spawnIn (screenSession session) dir
 
-gvimSession tc session = spawnT' tc ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
+--gvimSession tc session = spawnT' tc ("gvim -c ':SessionOpen " ++ session ++ "' -c 'let v:this_session = \"" ++ session ++ "\"'")
+gvimSession tc session = spawnT' tc ("gvim'")
+
+
+spawnTmuxSession' :: TopicConfig -> String -> X ()
+spawnTmuxSession' tc session = currentTopicDir tc >>= spawnTmuxSessionIn session
+
+spawnTmuxSession :: String -> X ()
+spawnTmuxSession session = spawnTmuxSession' myTopicConfig session
+
+spawnTmuxSessionIn :: String -> Dir -> X ()
+spawnTmuxSessionIn session dir = spawnIn (tmuxSession session) dir
+    where
+        tmuxSession session = myTerminal ++ " -e tmux new -A -s " ++ session
+
+spawnTmuxinatorSessionIn :: String -> Dir -> X ()
+spawnTmuxinatorSessionIn session dir = spawnIn (tmuxSession session) dir
+    where
+        tmuxSession session = myTerminal ++ " -e tmuxinator start -A -s " ++ session
+
 
 -- code topics
 codeTopicAction' tc = spawnShell tc >> spawnT' tc "gvim"
@@ -308,8 +328,12 @@ codeTopicAction = codeTopicAction' myTopicConfig
 codeTopicSession :: TopicConfig -> String -> (String, X () )
 codeTopicSession tc topic = (topic, codeTopicSession' tc topic)
 
+codeTopicSessionIn :: String -> Dir -> X ()
+codeTopicSessionIn session dir = spawnIn (myTerminal ++ " -e tmuxinator start code -n \"" ++ session ++ "\" workspace=" ++ dir) dir
+
 codeTopicSession' :: TopicConfig -> String -> X ()
-codeTopicSession' tc topic = spawnScreenSession' tc topic >> gvimSession tc topic
+codeTopicSession' tc topic = currentTopicDir tc >>= codeTopicSessionIn topic
+--codeTopicSession' tc topic = spawnTmuxSession' tc topic >> gvimSession tc topic
 
 
 -- Layouts ---------------------------------------------------------------------
@@ -382,7 +406,7 @@ myLayoutHook ts = avoidStruts
 
 -- Key Bindings ----------------------------------------------------------------
 
-delKeys = []
+delKeys = ["M-" ++ [n] | n <- ['1'..'9']]
 insKeys home tc =
     [ ("M-<Return>",        promote)
     , ("M-v",               sendMessage ToggleStruts)
@@ -441,6 +465,7 @@ insKeys home tc =
     , ("M-f",               gridselectTopic tc myGSConfig)
 
     , ("M-r",               renameWorkspace myXPConfig)
+    , ("M-<F-1>",           renameWorkspace myXPConfig)
 
     , ("M-S-<Backspace>",   removeWorkspace)
 
@@ -470,11 +495,16 @@ insKeys home tc =
     ]
     ++
     -- switch or shift to Nth last focused workspace (history)
-    [("M" ++ m ++ ('-':k:[]) , f i)
-        -- | (i, k) <- zip [1..] ["<F-1>", "<F-2>", "<F-3>", "<F-4>", "<F-5>", "<F-6>", "<F-7>","<F-8>", "<F-9>"]
+    -- [("M" ++ m ++ ('-':k:[]) , f i)
+    [(mod ++ m ++ (k:[]), f i)
         | (i, k) <- zip [1..] ['1'..'9']
-        , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "-S"), (copyNthLastFocused, "-C-S")]
+        , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "S-")]
+        -- , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "S-"), (copyNthLastFocused, "C-S-")]
     ]
+    where
+        --mod  = "M-"
+        mod  = "C-M-"
+
 
 multimediaKeys =
         [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
@@ -489,8 +519,16 @@ multimediaKeys =
         , ("<XF86AudioNext>",        spawn "xmpc next")
         ]
 
-delButtons = []
-insButtons = []
+delButtons =
+        [ (mod1Mask, button1)
+        , (mod1Mask, button2)
+        , (mod1Mask, button3)
+        ]
+insButtons =
+        [ ((mod1Mask .|. controlMask, button1), (\w -> focus w >> Flex.mouseWindow Flex.linear w))
+        , ((mod1Mask .|. controlMask, button2), (\w -> focus w >> windows W.shiftMaster))
+        , ((mod1Mask .|. controlMask, button3), (\w -> focus w >> Flex.mouseWindow Flex.resize w))
+        ]
 
 myGestures = M.fromList
         [ ( [],                 focus)
@@ -681,6 +719,7 @@ myDynamicLogWithPP tc pp = myDynamicLogString tc pp >>= io . ppOutput pp
 -- main ------------------------------------------------------------------------
 
 statusBarCmd = "dzen2"
+             ++ " -dock"
              ++ " -bg '#000000'"
              ++ " -fg '#FFFFFF'"
              ++ " -h 16 -fn \"" ++ myDzen2Font ++ "\""
