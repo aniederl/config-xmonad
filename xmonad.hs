@@ -132,8 +132,8 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          , terminal           = myTerminal
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
-         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D" <+> addEWMHFullscreen
-         , handleEventHook    = ewmhDesktopsEventHook <+> fullscreenEventHook
+         , startupHook        = ewmhDesktopsStartup <+> docksStartupHook <+> setWMName "LG3D" <+> addEWMHFullscreen
+         , handleEventHook    = ewmhDesktopsEventHook <+> fullscreenEventHook <+> docksEventHook
          , logHook            = ewmhDesktopsLogHook
                               >> updatePointer (1.0, 1.0) (1, 1) -- (Relative 1.0 1.0)
          , manageHook         = manageSpawn <+> myManageHook
@@ -625,6 +625,31 @@ dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
                     ++ dmenuArgs conf
                     ++ "` && eval \"exec $exe\""
 
+-- Dock support ----------------------------------------------------------------
+
+-- fix window order for newly started docks
+-- see https://github.com/xmonad/xmonad-contrib/issues/211
+
+-- | Restack dock under lowest managed window.
+lowerDock :: ManageHook
+lowerDock = checkDock --> do
+    w <- ask
+    mlw <- liftX $ findLowest
+    case mlw of
+      Just lw   -> liftX $ do
+        d <- asks display
+        liftIO $ restackWindows d [lw, w]
+        return idHook
+      Nothing   -> return idHook
+
+-- | Find lowest managed window.
+findLowest :: X (Maybe Window)
+findLowest  = withWindowSet $ \ws -> do
+    d <- asks display
+    r <- asks theRoot
+    (_, _, ts) <- liftIO $ queryTree d r
+    return (find (`W.member` ws) ts)
+
 
 -- Manage Hook -----------------------------------------------------------------
 
@@ -649,7 +674,8 @@ myManageHook = composeAll $
              [ role      =? r --> unfloat | r <- mySinkRoles ]
              ++
               -- other hooks
-             [ manageDocks
+             [ lowerDock
+             , manageDocks
              , scratchpadManageHookDefault
              ]
     where moveToC c w = className =? c --> doF (W.shift w)
