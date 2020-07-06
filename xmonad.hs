@@ -93,6 +93,8 @@ promptFontSize = ":size=14"
 
 myTerminal = "urxvt"
 
+myBrowser = "google-chrome-beta"
+
 
 myBgColor = "black"
 myFgColor = "blue"
@@ -194,12 +196,16 @@ myDefaultTopicConfig = TopicConfig
 
 -- actions
 myActionTopics' :: [(Topic, X ())]
-myActionTopics' = [ ("admin", spawnTmuxSession "main" >>  spawnT (myTerminal ++ " -e sudo tmuxinator admin"))
+myActionTopics' = [ ("admin", spawnTmuxSession "main" >>  spawnT (myTerminal ++ " -e sudo -i tmuxinator admin"))
                   , ("music", spawn "clementine")
                   , ("gimp",  spawn "gimp")
                   , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
                   , ("im",    spawn "skype")
                   , ("skype", spawn "skype")
+                  , ("teams", spawn myBrowser)
+                  , ("web",   spawn myBrowser)
+                  , ("com",   spawn "thunderbird")
+                  , ("vbox",  spawn "VirtualBox")
                   ]
 
 myActionTopics :: [(Topic, Dir, X ())]
@@ -208,15 +214,10 @@ myActionTopics = map (\(n, a) -> (n, "", a)) myActionTopics'
                  ]
 
 myCodeTopics = [ ("xmonad", ".xmonad")
-               , ("sweb",   "bs/sweb")
-               , ("bs",     "bs")
-               , ("sup",    "src/sup")
                , ("slrnrc", "etc/slrn")
                ]
 
-myOtherTopics = [ "com"
-                , "web"
-                , "documents"
+myOtherTopics = [ "documents"
                 , "gitk"
                 ]
 
@@ -377,7 +378,7 @@ tiledMirror = named "mirror" $ Mirror $ tiled $ 1/2
 codeMirror  = named "code"   $ Mirror $ tiled $ 4/5
 
 layoutTerm = halfTiled  ||| tiledMirror ||| Full ||| magicFocus(noBorders Circle)
-layoutCode = codeMirror ||| halfTiled   ||| Full ||| magicFocus(noBorders Circle)
+layoutCode = Full ||| codeMirror ||| halfTiled   ||| magicFocus(noBorders Circle)
 
 defaultLayouts = Full   ||| halfTiled   ||| tiledMirror ||| Circle
 
@@ -492,7 +493,7 @@ insKeys home tc =
 
     -- scratchpad terminal with a screen session
     -- need to add '-name' as first argument or else urxvt won't use it
-    , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'screen -c ~/.xmonad/screenrc-scratchpad -D -R scratchpad'"))
+    , ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'tmux'"))
 
     --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
@@ -519,25 +520,31 @@ insKeys home tc =
     -- [("M" ++ m ++ ('-':k:[]) , f i)
     [(mod ++ m ++ (k:[]), f i)
         | (i, k) <- zip [1..] ['1'..'9']
-        , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "S-")]
+        , (f, m) <- [(switchNthLastFocused tc, "C-M-"), (shiftNthLastFocused, "M-S-")]
         -- , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "S-"), (copyNthLastFocused, "C-S-")]
     ]
     where
         --mod  = "M-"
-        mod  = "C-M-"
+        --mod  = "C-M-"
+        mod  = ""
 
 
 multimediaKeys =
-        [ ("<XF86AudioLowerVolume>", unsafeSpawn "notify-vol down")
-        , ("<XF86AudioMute>",        unsafeSpawn "notify-vol mute")
-        , ("<XF86AudioRaiseVolume>", unsafeSpawn "notify-vol up")
-        , ("<XF86TouchpadToggle>",   unsafeSpawn "notify-touchpad-toggle")
+        [ ("<XF86AudioLowerVolume>",  unsafeSpawn "notify-vol down")
+        , ("<XF86AudioRaiseVolume>",  unsafeSpawn "notify-vol up")
+        , ("<XF86AudioMute>",         unsafeSpawn "notify-vol mute")
+        , ("<XF86AudioMicMute>",      unsafeSpawn "notify-mic-toggle")
+        , ("<XF86TouchpadToggle>",    unsafeSpawn "notify-touchpad-toggle")
         , ("<XF86MonBrightnessDown>", unsafeSpawn "notify-bright down")
         , ("<XF86MonBrightnessUp>",   unsafeSpawn "notify-bright up")
-        , ("<XF86AudioPlay>",        spawn "xmpc toggle")
-        , ("<XF86AudioStop>",        spawn "xmpc stop")
-        , ("<XF86AudioPrev>",        spawn "xmpc prev")
-        , ("<XF86AudioNext>",        spawn "xmpc next")
+        --, ("<XF86AudioPlay>",        spawn "xmpc toggle")
+        --, ("<XF86AudioStop>",        spawn "xmpc stop")
+        --, ("<XF86AudioPrev>",        spawn "xmpc prev")
+        --, ("<XF86AudioNext>",        spawn "xmpc next")
+        , ("<XF86AudioPlay>",        spawn "qdbus org.mpris.MediaPlayer2.clementine /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause")
+        , ("<XF86AudioStop>",        spawn "qdbus org.mpris.MediaPlayer2.clementine /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Stop")
+        , ("<XF86AudioPrev>",        spawn "qdbus org.mpris.MediaPlayer2.clementine /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous")
+        , ("<XF86AudioNext>",        spawn "qdbus org.mpris.MediaPlayer2.clementine /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Next")
         ]
 
 delButtons =
