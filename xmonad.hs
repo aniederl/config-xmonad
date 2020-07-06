@@ -130,7 +130,7 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          , terminal           = myTerminal
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
-         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D"
+         , startupHook        = ewmhDesktopsStartup <+> setWMName "LG3D" <+> addEWMHFullscreen
          , handleEventHook    = ewmhDesktopsEventHook <+> fullscreenEventHook
          , logHook            = ewmhDesktopsLogHook
                               >> updatePointer (1.0, 1.0) (1, 1) -- (Relative 1.0 1.0)
@@ -146,6 +146,27 @@ updateMyConfig conf home tc ts = conf
     , layoutHook = myLayoutHook  ts
     }
     `additionalKeysP` (insKeys home tc)
+
+
+-- Fullscreen support ----------------------------------------------------------
+
+-- advertise fullscreen capability (fixes Firefox fullscreen issue)
+-- see https://github.com/xmonad/xmonad-contrib/issues/183
+addNETSupported :: Atom -> X()
+addNETSupported x = withDisplay $ \dpy -> do
+    r               <- asks theRoot
+    a_NET_SUPPORTED <- getAtom "_NET_SUPPORTED"
+    a               <- getAtom "ATOM"
+    liftIO $ do
+        sup <- (join . maybeToList) <$> getWindowProperty32 dpy a_NET_SUPPORTED r
+        when (fromIntegral x `notElem` sup) $
+            changeProperty32 dpy r a_NET_SUPPORTED a propModeAppend [fromIntegral x]
+
+addEWMHFullscreen :: X ()
+addEWMHFullscreen = do
+    wms <- getAtom "_NET_WM_STATE"
+    wfs <- getAtom "_NET_WM_STATE_FULLSCREEN"
+    mapM_ addNETSupported [wms, wfs]
 
 
 -- Topics ----------------------------------------------------------------------
