@@ -528,6 +528,8 @@ insKeys home tc =
     --, ("<F-11>",            spawn "audtool playback-seek-relative +3")
     --, ("<F-10>",            spawn "audtool playback-seek-relative -3")
 
+    --, ("<M-`",              unsafeSpawn "notify-time")
+
     -- cmus
     , ("<F-12>",            spawn "cmus-remote -C \'seek -1\' \'player-pause\'")
     , ("<F-11>",            spawn "cmus-remote -C \'seek +3\'")
@@ -538,7 +540,7 @@ insKeys home tc =
     -- [("M" ++ m ++ ('-':k:[]) , f i)
     [(mod ++ m ++ (k:[]), f i)
         | (i, k) <- zip [1..] ['1'..'9']
-        , (f, m) <- [(switchNthLastFocused tc, "C-M-"), (shiftNthLastFocused, "M-S-")]
+        , (f, m) <- [(switchNthLastFocused tc, "M-"), (shiftNthLastFocused, "M-S-")]
         -- , (f, m) <- [(switchNthLastFocused tc, ""), (shiftNthLastFocused, "S-"), (copyNthLastFocused, "C-S-")]
     ]
     where
@@ -552,6 +554,7 @@ multimediaKeys =
         , ("<XF86AudioRaiseVolume>",  unsafeSpawn "notify-vol up")
         , ("<XF86AudioMute>",         unsafeSpawn "notify-vol mute")
         , ("<XF86AudioMicMute>",      unsafeSpawn "notify-mic-toggle")
+        , ("<XF86Favorites>",         unsafeSpawn "notify-mic-toggle")
         , ("<XF86TouchpadToggle>",    unsafeSpawn "notify-touchpad-toggle")
         , ("<XF86MonBrightnessDown>", unsafeSpawn "notify-bright down")
         , ("<XF86MonBrightnessUp>",   unsafeSpawn "notify-bright up")
@@ -559,6 +562,8 @@ multimediaKeys =
         --, ("<XF86AudioStop>",        spawn "xmpc stop")
         --, ("<XF86AudioPrev>",        spawn "xmpc prev")
         --, ("<XF86AudioNext>",        spawn "xmpc next")
+        , ("<XF86Display>",          spawn "qdbus org.mpris.MediaPlayer2.strawberry /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause")
+        , ("<XF86WLAN>",             spawn "qdbus org.mpris.MediaPlayer2.strawberry /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause")
         , ("<XF86AudioPlay>",        spawn "qdbus org.mpris.MediaPlayer2.strawberry /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.PlayPause")
         , ("<XF86AudioStop>",        spawn "qdbus org.mpris.MediaPlayer2.strawberry /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Stop")
         , ("<XF86AudioPrev>",        spawn "qdbus org.mpris.MediaPlayer2.strawberry /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.Previous")
@@ -585,6 +590,7 @@ myToggleWS :: X ()
 myToggleWS = toggleWS' [scratchpadWorkspaceTag]
 myToggleTopic :: TopicConfig -> X ()
 myToggleTopic tc = switchNthLastFocusedByScreen tc 1
+--myToggleTopic tc = switchNthLastFocused tc 1
 
 --myCycleRecentWS = myRecentWS W.view
 --myShiftRecentWS = myRecentWS shiftView'
@@ -776,9 +782,9 @@ mypprWindowSet tg pp = do
     sort' <- ppSort pp
     let empty_workspaces = map W.tag $ filter (isNothing . W.stack) $ W.workspaces winset
         maxDepth = maxTopicHistory tg
-    setLastFocusedTopic tg
-                        (W.tag . W.workspace . W.current $ winset)
-                        (`notElem` empty_workspaces)
+    --setLastFocusedTopic tg
+    --                    (W.tag . W.workspace . W.current $ winset)
+    --                    (`notElem` empty_workspaces)
     lastWs <- workspaceHistory
     let depth topic = fromJust $ elemIndex topic (lastWs ++ [topic])
         add_depth proj topic = proj pp . (((topic++":")++) . show) . depth $ topic
