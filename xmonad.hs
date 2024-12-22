@@ -646,10 +646,13 @@ dmenuArgs c = ""
                       Bottom -> " -b"
                       _      -> ""
 
+--dmenuPromptCmd :: XPConfig -> String
+--dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
+--                    ++ dmenuArgs conf
+--                    ++ "` && eval \"exec $exe\""
+
 dmenuPromptCmd :: XPConfig -> String
-dmenuPromptCmd conf = "exe=`dmenu_path | yeganesh -- "
-                    ++ dmenuArgs conf
-                    ++ "` && eval \"exec $exe\""
+dmenuPromptCmd conf = "rofi -show drun"
 
 -- Dock support ----------------------------------------------------------------
 
