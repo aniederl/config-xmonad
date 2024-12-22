@@ -863,4 +863,3 @@ main = do
                              >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din3 })
 --                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din4 })
         }
-
