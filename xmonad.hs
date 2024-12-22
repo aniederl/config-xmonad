@@ -205,7 +205,7 @@ myDefaultTopicConfig = TopicConfig
 
 -- actions
 myActionTopics' :: [(Topic, X ())]
-myActionTopics' = [ ("admin", spawnTmuxSession "main" >>  spawnT (myTerminal ++ " -e sudo -i tmuxinator admin"))
+myActionTopics' = [ ("admin", spawnTmuxSession "main" >> spawnTmuxinatorSession "admin")
                   , ("music", spawn "strawberry")
                   , ("gimp",  spawn "gimp")
                   , ("cal",   spawnT (myTerminal ++ " -e wyrd"))
@@ -346,10 +346,16 @@ spawnTmuxSessionIn session dir = spawnIn (tmuxSession session) dir
     where
         tmuxSession session = myTerminal ++ " -e tmux new -A -s " ++ session
 
+spawnTmuxinatorSession' :: TopicConfig -> String -> X ()
+spawnTmuxinatorSession' tc session = currentTopicDir tc >>= spawnTmuxinatorSessionIn session
+
+spawnTmuxinatorSession :: String -> X ()
+spawnTmuxinatorSession session = spawnTmuxinatorSession' myTopicConfig session
+
 spawnTmuxinatorSessionIn :: String -> Dir -> X ()
 spawnTmuxinatorSessionIn session dir = spawnIn (tmuxSession session) dir
     where
-        tmuxSession session = myTerminal ++ " -e tmuxinator start -A -s " ++ session
+        tmuxSession session = myTerminal ++ " -e tmuxinator start " ++ session
 
 
 -- code topics
