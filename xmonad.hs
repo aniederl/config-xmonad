@@ -694,6 +694,8 @@ myManageHook = composeAll $
              ++
              [ className =? c --> doFloat  | c <- myClassFloats ]
              ++
+             [ className ^? c --> doFloat  | c <- myClassPrefixFloats ]
+             ++
               -- ignore
              [ resource  =? r --> doIgnore | r <- myIgnores ]
              ++
@@ -713,8 +715,9 @@ myManageHook = composeAll $
           moveToT t w = title     =? t --> doF (W.shift t)
           floatC  c   = className =? c --> doFloat
           unfloat     = ask >>= doF . W.sink
-          myClassCenterFloats = [ "Xmessage", "feh", "Display", "MPlayer", "mpv", "Kdiff3", "Audacious" ] --"MPlayer",
+          myClassCenterFloats = [ "Xmessage", "feh", "Display", "MPlayer", "mpv", "Kdiff3", "Audacious", "Imager", "steam_app_1213210", "steam_app_38400" ] --"MPlayer",
           myClassFloats = [ "Plasma-desktop", "plasmashell", "Klipper" ] --"MPlayer",
+          myClassPrefixFloats = [ "steam_app_" ]
           myTitleCenterFloats = [ "Downloads", "Firefox Preferences", "Thunderbird Preferences", "Save As...",
                             "Preferences...", "Confirm...", "Connect via URL", "Enter Password", "Password Required", "Transfer Files", "Rename",
                             "Make Directory", "Delete Files/Directories", "Getting directory listings", "Options", "Chmod", "Add Bookmark",
