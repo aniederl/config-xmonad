@@ -86,6 +86,8 @@ import System.Environment
 
 import XMonad.StackSet (view, greedyView, tag, hidden, stack)
 
+import XMonad.Hooks.TaffybarPagerHints (pagerHintsEventHook, pagerHintsLogHook)
+
 
 -- default configuration -------------------------------------------------------
 
@@ -140,7 +142,7 @@ myConfig = withUrgencyHookC NoUrgencyHook urgencyConfig { suppressWhen = Focused
          , normalBorderColor  = "#333333"
          , focusedBorderColor = "#0000ff"
          , startupHook        = setWMName "LG3D" <+> addEWMHFullscreen
-         , handleEventHook    = handleEventHook def <+> Hacks.windowedFullscreenFixEventHook
+         , handleEventHook    = handleEventHook def <> pagerHintsEventHook <+> Hacks.windowedFullscreenFixEventHook
          , logHook            = updatePointer (1.0, 1.0) (1, 1) -- (Relative 1.0 1.0)
          , manageHook         = manageSpawn <+> myManageHook
          }
@@ -800,7 +802,9 @@ statusBarCmd = "dzen2"
              ++ " -fg '#FFFFFF'"
              ++ " -h 16 -fn \"" ++ myDzen2Font ++ "\""
              ++ " -sa c -e '' -ta l"
+--             ++ " -w 1920"
 --             ++ " -w 800"
+--             ++ " -expand right"
 
 logBarCmd = "inotail -f -n 30"
           ++ "/var/log/messages | dzen2"
@@ -818,13 +822,19 @@ main = do
     home <- getEnv "HOME"
     tf   <- readTopicsFile $ home ++ "/" ++ myTopicFile
     ctf  <- readTopicsFile $ home ++ "/" ++ myCodeTopicFile
-    din  <- spawnPipe $ statusBarCmd ++ " -xs 1"
-    din2 <- spawnPipe $ statusBarCmd ++ " -xs 2"
+    --din  <- spawnPipe $ "taffybar"
+    din  <- spawnPipe $ statusBarCmd ++ " -w 2560" ++ " -xs 1"
+    din2 <- spawnPipe $ statusBarCmd ++ " -w 2560" ++ " -xs 2"
+    din3 <- spawnPipe $ statusBarCmd ++ " -w 1920" ++ " -xs 3"
+    --din4 <- spawnPipe $ "cat >> .status_bar.log"
     let tc   = updateTopicConfig myTopicConfig $ fileTopicList tc tf ctf
     let conf = updateMyConfig myConfig home tc $ myTopics ++ fileTopicList tc tf ctf
     xmonad $ conf
-        { logHook            = logHook conf >> workspaceHistoryHookExclude [scratchpadWorkspaceTag]
+        { logHook            = logHook conf >> workspaceHistoryHookExclude [scratchpadWorkspaceTag] <> pagerHintsLogHook
+                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din })
                              >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din })
                              >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din2 })
+                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din3 })
+--                             >> (myDynamicLogWithPP tc $ (myPP home) { ppOutput = hPutStrLn din4 })
         }
 
