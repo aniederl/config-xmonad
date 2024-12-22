@@ -64,6 +64,7 @@ import XMonad.Prompt.Shell
 import XMonad.Prompt.AppendFile
 import XMonad.Prompt.Workspace
 
+import XMonad.Util.Dmenu (menuMapArgs)
 import XMonad.Util.EZConfig
 import XMonad.Util.NamedScratchpad
 import XMonad.Util.Run
@@ -434,6 +435,12 @@ myLayoutHook ts = avoidStruts
         codeWS = [ topicName t | t <- ts, topicType t == Code ]
 
 
+pickTopic :: TopicConfig -> X()
+pickTopic tc = flip whenJust (switchTopic tc) =<< menuMapArgs "rofi" ["-dmenu", "-p", "workspace"] =<< makeChoices <$> workspaceHistory
+          where
+                makeChoices ids = M.fromList [(x, x) | x <- ids]
+
+
 -- Scratchpads ----------------------------------------------------------------
 
 scratchpads = [ NS "term" ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'tmux'") (appName =? "scratchpad")
@@ -510,6 +517,8 @@ insKeys home tc =
     , ("M-<F-1>",           renameWorkspace myXPConfig)
 
     , ("M-S-<Backspace>",   removeWorkspace)
+
+    , ("M-y",               pickTopic tc)
 
     -- scratchpad terminal with a screen session
     -- need to add '-name' as first argument or else urxvt won't use it
