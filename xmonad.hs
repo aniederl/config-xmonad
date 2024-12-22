@@ -436,8 +436,12 @@ myLayoutHook ts = avoidStruts
 
 -- Scratchpads ----------------------------------------------------------------
 
-scratchpads = [ NS "term" ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'tmux'") (appName =? "scratchpad") (customFloating $ W.RationalRect 0.25 0.375 0.5 0.3)
-              , NS "htop" ((terminal myConfig) ++ " -name htop -e htop") (appName =? "htop") (customFloating $ W.RationalRect (1/6) (1/6) (2/3) (2/3))
+scratchpads = [ NS "term" ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'tmux'") (appName =? "scratchpad")
+                   (customFloating $ W.RationalRect 0.25 0.375 0.5 0.3)
+              , NS "htop" ((terminal myConfig) ++ " -name htop -e htop") (appName =? "htop")
+                   (customFloating $ W.RationalRect (1/6) (1/6) (2/3) (2/3))
+              , NS "pavucontrol" "pavucontrol" (className =? "pavucontrol")
+                   (customFloating $ W.RationalRect (1/4) (1/4) (2/4) (2/4))
               ]
 
 -- Key Bindings ----------------------------------------------------------------
@@ -512,6 +516,7 @@ insKeys home tc =
     --, ("M-s",               scratchpadSpawnActionTerminal ((terminal myConfig) ++ " -name scratchpad -e $SHELL -c 'tmux'"))
     , ("M-s",               namedScratchpadAction scratchpads "term")
     , ("M-S-t",             namedScratchpadAction scratchpads "htop")
+    , ("<XF86Calculator>",  namedScratchpadAction scratchpads "pavucontrol")
 
     --, ("M-n",               refresh)
     , ("M-C-S-q",           io (exitWith ExitSuccess))
