@@ -313,7 +313,9 @@ spawnT' tc program = currentTopicDir tc >>= spawnIn program
 spawnT program = spawnT' myTopicConfig program
 
 spawnIn :: String -> Dir -> X ()
-spawnIn program dir = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
+spawnIn program dir
+              | dir == "" = spawn $ program
+              | otherwise = spawn $ "cd ''" ++ dir ++ "'' && " ++ program ++ " &"
 {-spawnIn program dir = spawn $ myTerminal ++ "'(cd " ++ dir ++ " && zsh )'"-}
 
 spawnShellIn :: Dir -> X ()
@@ -735,8 +737,8 @@ myManageHook = composeAll $
           moveToT t w = title     =? t --> doF (W.shift t)
           floatC  c   = className =? c --> doFloat
           unfloat     = ask >>= doF . W.sink
-          myClassCenterFloats = [ "Xmessage", "feh", "Display", "MPlayer", "mpv", "Kdiff3", "Audacious", "Imager", "steam_app_1213210", "steam_app_38400" ] --"MPlayer",
-          myClassFloats = [ "Plasma-desktop", "plasmashell", "Klipper" ] --"MPlayer",
+          myClassCenterFloats = [ "Xmessage", "feh", "Display", "MPlayer", "mpv", "Kdiff3", "Audacious", "Imager", "steam_app_1213210", "steam_app_38400", "zenity" ] --"MPlayer",
+          myClassFloats = [ "Plasma-desktop", "plasmashell", "Klipper", "Tropico6-Linux-Shipping" ] --"MPlayer",
           myClassPrefixFloats = [ "steam_app_" ]
           myTitleCenterFloats = [ "Downloads", "Firefox Preferences", "Thunderbird Preferences", "Save As...",
                             "Preferences...", "Confirm...", "Connect via URL", "Enter Password", "Password Required", "Transfer Files", "Rename",
